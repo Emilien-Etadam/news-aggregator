@@ -141,13 +141,37 @@ install_systemd_units() {
       -e "s|@@FRANKENPHP_BIN@@|${frankenphp_escaped}|g" \
       "$src" >"$dest"
   done
+}
 
+start_systemd_services() {
+  export XDG_RUNTIME_DIR="/run/user/$(id -u)"
   systemctl --user daemon-reload
   systemctl --user enable --now \
     news-web news-worker-async news-worker-enrich \
     news-worker-fulltext news-scheduler
-  sleep 2
-  systemctl --user --no-pager status news-web | head -5 || true
+
+  local i
+  for i in $(seq 1 15); do
+    if ss -tln 2>/dev/null | grep -q ':8000 '; then
+      break
+    fi
+    sleep 1
+  done
+  if ! ss -tln 2>/dev/null | grep -q ':8000 '; then
+    echo "FATAL: news-web did not start listening on :8000 within 15s" >&2
+    systemctl --user status news-web --no-pager || true
+    journalctl --user -u news-web -n 30 --no-pager || true
+    exit 1
+  fi
+  log "news-web listening on :8000"
+
+  local http_code
+  http_code=$(curl -fsS -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/ || echo "000")
+  if [ "$http_code" != "200" ] && [ "$http_code" != "302" ]; then
+    echo "FATAL: unexpected HTTP ${http_code} from http://127.0.0.1:8000/" >&2
+    exit 1
+  fi
+  log "HTTP check OK (status ${http_code})"
 }
 
 verify_post_install() {
@@ -216,8 +240,10 @@ php bin/console asset-map:compile
 if [ "$INSTALL_SYSTEMD" = "yes" ] && [ -d docs/bare-metal/systemd ]; then
   log "Installing systemd user units"
   install_systemd_units
+  start_systemd_services
 fi
 
 verify_post_install
 
-log "Done. Open ${MERCURE_BASE_URL%/} and log in with ${ADMIN_EMAIL}"
+HOST="$(hostname -f 2>/dev/null || hostname 2>/dev/null || echo 127.0.0.1)"
+log "Done. Open http://${HOST}:8000 and log in with ${ADMIN_EMAIL}"

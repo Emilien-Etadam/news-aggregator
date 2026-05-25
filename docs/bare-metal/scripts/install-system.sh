@@ -351,6 +351,15 @@ if ! id "$APP_USER" >/dev/null 2>&1; then
   adduser --disabled-password --gecos "" "$APP_USER"
 fi
 loginctl enable-linger "$APP_USER"
+systemctl start "user@$(id -u "$APP_USER").service"
+for _ in 1 2 3 4 5; do
+  [ -d "/run/user/$(id -u "$APP_USER")" ] && break
+  sleep 1
+done
+if [ ! -d "/run/user/$(id -u "$APP_USER")" ]; then
+  echo "FATAL: user systemd instance for ${APP_USER} did not start" >&2
+  exit 1
+fi
 
 log "PostgreSQL bootstrap"
 systemctl enable --now postgresql
