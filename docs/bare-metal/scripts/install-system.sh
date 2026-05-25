@@ -155,34 +155,47 @@ install_frankenphp() {
 }
 
 resolve_pg_password() {
-  local force_update=0 stored=""
+  local force_update=0 stored="" has_valid_file=0 role_exists=0 write_file=0
 
-  if pg_role_exists && [ "$PG_PASSWORD_PROVIDED" -eq 0 ] && [ ! -r "$PG_PASSWORD_FILE" ]; then
-    log "PostgreSQL role 'app' already exists; skipping password setup (set PG_PASSWORD or create ${PG_PASSWORD_FILE} to manage it)"
-    PG_FORCE_PASSWORD_UPDATE=0
-    return 0
+  if pg_role_exists; then
+    role_exists=1
   fi
 
-  if [ "$PG_PASSWORD_PROVIDED" -eq 1 ]; then
-    if [ -r "$PG_PASSWORD_FILE" ]; then
-      stored=$(<"$PG_PASSWORD_FILE")
+  stored=""
+  if [ -r "$PG_PASSWORD_FILE" ]; then
+    stored=$(tr -d '[:space:]' < "$PG_PASSWORD_FILE")
+  fi
+  if [ -n "$stored" ]; then
+    has_valid_file=1
+  fi
+
+  if [ "$role_exists" -eq 0 ]; then
+    if [ "$PG_PASSWORD_PROVIDED" -eq 0 ]; then
+      PG_PASSWORD=$(openssl rand -hex 16)
+    fi
+    force_update=1
+    write_file=1
+  elif [ "$has_valid_file" -eq 1 ]; then
+    if [ "$PG_PASSWORD_PROVIDED" -eq 1 ]; then
       if [ "$PG_PASSWORD" = "$stored" ]; then
         force_update=0
       else
         force_update=1
+        write_file=1
       fi
     else
-      force_update=1
+      PG_PASSWORD=$stored
+      force_update=0
     fi
-  elif [ -r "$PG_PASSWORD_FILE" ]; then
-    PG_PASSWORD=$(<"$PG_PASSWORD_FILE")
-    force_update=0
-  else
-    PG_PASSWORD=$(openssl rand -hex 16)
+  elif [ "$PG_PASSWORD_PROVIDED" -eq 1 ]; then
     force_update=1
+    write_file=1
+  else
+    log "WARNING: PostgreSQL role 'app' exists but ${PG_PASSWORD_FILE} is missing or empty. Set PG_PASSWORD or recreate the secret file manually."
+    exit 1
   fi
 
-  if [ "$force_update" -eq 1 ] || [ ! -f "$PG_PASSWORD_FILE" ]; then
+  if [ "$write_file" -eq 1 ]; then
     umask 077
     printf '%s' "$PG_PASSWORD" >"$PG_PASSWORD_FILE"
     chown "${APP_USER}:${APP_USER}" "$PG_PASSWORD_FILE"
