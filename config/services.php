@@ -46,6 +46,8 @@ use App\Notification\Service\AiAlertEvaluationService;
 use App\Notification\Service\NotificationDispatchService;
 use App\Shared\AI\Command\AiSmokeTestCommand;
 use App\Shared\AI\Platform\ModelFailoverPlatform;
+use App\Shared\AI\Platform\OpenAiCompatiblePlatform;
+use App\Shared\AI\Platform\SettingsRoutedPlatform;
 use App\Shared\AI\Service\ModelDiscoveryService;
 use App\Shared\Controller\AiStatsController;
 use App\Shared\Controller\SettingsController;
@@ -153,45 +155,51 @@ return static function (ContainerConfigurator $container): void {
         ->arg('$queueAccelerateThreshold', '%env(int:QUEUE_ACCELERATE_THRESHOLD)%')
         ->arg('$queueSkipFreeThreshold', '%env(int:QUEUE_SKIP_FREE_THRESHOLD)%');
 
-    // All AI services use the failover-wrapped platform
+    $services->set('ai.platform.openai_compatible', OpenAiCompatiblePlatform::class);
+
+    $services->set('ai.platform.settings_routed', SettingsRoutedPlatform::class)
+        ->arg('$openRouterFailover', service('ai.platform.openrouter.failover'))
+        ->arg('$openAiCompatiblePlatform', service('ai.platform.openai_compatible'));
+
+    // All AI services use the settings-routed platform (OpenRouter or OpenAI-compatible API)
     $services->set(AiCategorizationService::class)
         ->arg('$ruleBasedFallback', service(RuleBasedCategorizationService::class))
-        ->arg('$platform', service('ai.platform.openrouter.failover'));
+        ->arg('$platform', service('ai.platform.settings_routed'));
 
     $services->set(AiSummarizationService::class)
         ->arg('$ruleBasedFallback', service(RuleBasedSummarizationService::class))
-        ->arg('$platform', service('ai.platform.openrouter.failover'));
+        ->arg('$platform', service('ai.platform.settings_routed'));
 
     $services->set(AiTranslationService::class)
         ->arg('$ruleBasedFallback', service(RuleBasedTranslationService::class))
-        ->arg('$platform', service('ai.platform.openrouter.failover'));
+        ->arg('$platform', service('ai.platform.settings_routed'));
 
     $services->set(AiKeywordExtractionService::class)
         ->arg('$ruleBasedFallback', service(RuleBasedKeywordExtractionService::class))
-        ->arg('$platform', service('ai.platform.openrouter.failover'));
+        ->arg('$platform', service('ai.platform.settings_routed'));
 
     $services->set(AiCombinedEnrichmentService::class)
         ->arg('$categorizationFallback', service(AiCategorizationService::class))
         ->arg('$summarizationFallback', service(AiSummarizationService::class))
         ->arg('$keywordExtractionFallback', service(AiKeywordExtractionService::class))
-        ->arg('$platform', service('ai.platform.openrouter.failover'));
+        ->arg('$platform', service('ai.platform.settings_routed'));
 
     $services->set(AiBatchTranslationService::class)
         ->arg('$translationFallback', service(AiTranslationService::class))
-        ->arg('$platform', service('ai.platform.openrouter.failover'));
+        ->arg('$platform', service('ai.platform.settings_routed'));
 
     $services->set(AiDeduplicationService::class)
         ->arg('$ruleBasedFallback', service(DeduplicationService::class))
-        ->arg('$platform', service('ai.platform.openrouter.failover'));
+        ->arg('$platform', service('ai.platform.settings_routed'));
 
     $services->set(AiAlertEvaluationService::class)
-        ->arg('$platform', service('ai.platform.openrouter.failover'));
+        ->arg('$platform', service('ai.platform.settings_routed'));
 
     $services->set(DigestSummaryService::class)
-        ->arg('$platform', service('ai.platform.openrouter.failover'));
+        ->arg('$platform', service('ai.platform.settings_routed'));
 
     $services->set(AiSmokeTestCommand::class)
-        ->arg('$platform', service('ai.platform.openrouter.failover'));
+        ->arg('$platform', service('ai.platform.settings_routed'));
 
     // Wire admin email for LoadAlertRulesCommand
     $services->set(LoadAlertRulesCommand::class)
@@ -222,7 +230,13 @@ return static function (ContainerConfigurator $container): void {
         ->arg('$displayLanguages', '%env(string:DISPLAY_LANGUAGES)%')
         ->arg('$fetchDefaultInterval', '%env(int:FETCH_DEFAULT_INTERVAL_MINUTES)%')
         ->arg('$retentionArticles', '%env(int:RETENTION_ARTICLES)%')
-        ->arg('$retentionLogs', '%env(int:RETENTION_LOGS)%');
+        ->arg('$retentionLogs', '%env(int:RETENTION_LOGS)%')
+        ->arg('$defaultAiProvider', '%env(default:ai_provider_default:AI_PROVIDER)%')
+        ->arg('$defaultAiOpenAiBaseUrl', '%env(default::AI_OPENAI_BASE_URL)%')
+        ->arg('$defaultAiOpenAiApiKey', '%env(default::AI_OPENAI_API_KEY)%')
+        ->arg('$defaultAiOpenAiModel', '%env(default::AI_OPENAI_MODEL)%');
+
+    $container->parameters()->set('ai_provider_default', 'openrouter');
 
     $services->alias(SettingsServiceInterface::class, SettingsService::class);
 
@@ -263,7 +277,7 @@ return static function (ContainerConfigurator $container): void {
 
     // Chat: ArticleChatService uses inner OpenRouter platform for tool-calling agent
     $services->set(ArticleChatService::class)
-        ->arg('$innerPlatform', service('ai.platform.openrouter'))
+        ->arg('$innerPlatform', service('ai.platform.settings_routed'))
         ->arg('$toolbox', service('chat.toolbox'));
 
     $services->alias(ArticleChatServiceInterface::class, ArticleChatService::class);
