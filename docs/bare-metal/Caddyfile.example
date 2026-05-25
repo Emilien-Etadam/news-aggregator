@@ -1,5 +1,6 @@
 # Bare-metal Caddyfile for FrankenPHP.
-# Copy or symlink to your install; APP_ROOT must point at the project directory.
+# install-project.sh copies this template to ~/.config/news-aggregator/Caddyfile
+# and substitutes @@CADDYFILE@@ in news-web.service.
 #
 # Required env vars (via .env.local / EnvironmentFile):
 #   APP_ROOT          — absolute path to the project (e.g. /home/app/news-aggregator)

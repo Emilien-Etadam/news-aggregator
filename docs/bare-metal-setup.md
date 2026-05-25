@@ -4,60 +4,116 @@ Install and run the news-aggregator on Debian 13 without Docker. For the Docker 
 
 ## Automated install (recommended)
 
-Two idempotent scripts under `docs/bare-metal/scripts/` automate the manual steps below.
+Scripts live under `docs/bare-metal/scripts/`. They are **idempotent** and resolve systemd units, Caddyfile, and bootstrap assets relative to the script directory — not inside the application clone (which may be on a branch that does not yet contain `docs/bare-metal/`).
 
-### 1. System packages (as root)
+### One-shot bootstrap (`install.sh`)
+
+On a **fresh Debian 13** host as **root**. Use two short commands (avoid pasting one long line — chat clients often break URLs and `&&` chains).
+
+**1. Download the installer**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Emilien-Etadam/news-aggregator/docs/bare-metal-setup/docs/bare-metal/scripts/install.sh -o /root/install.sh
+```
+
+Replace `Emilien-Etadam/news-aggregator` with your fork if needed. The default branch for bootstrap assets is `docs/bare-metal-setup`.
+
+**2. Run the installer**
+
+```bash
+ADMIN_EMAIL=admin@local ADMIN_PASSWORD=changeme bash /root/install.sh
+```
+
+At the end, the script verifies that `news-web` listens on `:8000` and returns HTTP 200 or 302. Open `http://<host>:8000` and log in with the credentials above.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ADMIN_EMAIL` | *(required)* | Admin login email |
+| `ADMIN_PASSWORD` | *(required)* | Admin login password (plaintext; hashed at seed time) |
+| `REPO_URL` | `https://github.com/Emilien-Etadam/news-aggregator.git` | Git URL for the **application** clone (into `/home/app/news-aggregator`) |
+| `INSTALL_BRANCH` | `docs/bare-metal-setup` | Branch used to fetch bootstrap scripts when not run from a checkout |
+| `CLONE_DIR` | `/tmp/news` | Where bootstrap scripts are cloned when using `curl -o install.sh` |
+| `APP_USER` | `app` | Unix account created by `install-system.sh` |
+
+**What `install.sh` does:**
+
+1. Installs `git` if missing
+2. Clones bootstrap scripts (unless already running from a checkout)
+3. Runs `install-system.sh` — APT packages, FrankenPHP, PostgreSQL, `app` user, user systemd bus
+4. Runs `install-project.sh` as `app` — clone app, `.env.local`, migrations, seed, assets, systemd user services, HTTP check
+
+**After cloning this repository locally:**
+
+```bash
+sudo ADMIN_EMAIL=admin@local ADMIN_PASSWORD=changeme bash docs/bare-metal/scripts/install.sh
+```
+
+### Two-step install (alternative)
+
+Use this when you only need one phase, or when debugging.
+
+#### 1. System packages (as root)
 
 ```bash
 sudo docs/bare-metal/scripts/install-system.sh
 ```
 
-Installs APT packages, optional Sury PHP fallback, Composer, FrankenPHP (with SHA256 verification), PostgreSQL bootstrap, and the dedicated app user.
+Installs APT packages, optional Sury PHP fallback, Composer, FrankenPHP (with SHA256 verification), PostgreSQL bootstrap, the dedicated `app` user, and starts the `user@<uid>` systemd instance.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `APP_USER` | `app` | Unix account for the app and systemd user units |
 | `PG_PASSWORD` | *(auto)* | PostgreSQL password for role `app`. If unset, a random password is generated once and stored in `/home/<APP_USER>/.news-aggregator-pg-password` |
 | `SURY_FALLBACK` | `auto` | `auto` \| `yes` \| `no` — add Sury PHP repo when Debian PHP &lt; 8.4.19 |
-| `FRANKENPHP_VERSION` | `latest` | GitHub release tag (e.g. `v1.12.3`) or `latest`. Binary URL: `https://github.com/php/frankenphp/releases/download/<tag>/frankenphp-linux-<arch>`. Checksum verified via `sha256sum -c` (API digest when no `.sha256` sidecar file). On GitHub API rate limit (HTTP 403), pin this variable and retry. |
+| `FRANKENPHP_VERSION` | `latest` | GitHub release tag (e.g. `v1.12.3`) or `latest`. Checksum verified via `sha256sum -c`. On GitHub API rate limit (HTTP 403), pin this variable and retry. |
 
-Re-running is safe: the PostgreSQL password is **not** rotated unless `PG_PASSWORD` is set explicitly.
+Re-running is safe: the PostgreSQL password is **not** rotated unless `PG_PASSWORD` is set explicitly to a new value.
 
-If role `app` already exists (manual setup) and `${PG_PASSWORD_FILE}` is absent, password management is skipped — databases and extensions are still ensured. Set `PG_PASSWORD` or create the password file to take control.
+**Password file rules:**
+
+- Empty or whitespace-only secret files are treated as absent.
+- If role `app` does **not** exist, any stale secret file is ignored and a new password is generated.
+- If role `app` exists but the secret file is missing/empty and `PG_PASSWORD` is unset, the script exits with an error (manual intervention required).
 
 Pre-existing databases `app` / `app_test` owned by another role cause a hard exit (no modification).
 
-### 2. Project bootstrap (as app user)
+#### 2. Project bootstrap (as app user)
 
 ```bash
 su - app
-docs/bare-metal/scripts/install-project.sh
+REPO_URL=https://github.com/YOUR_FORK/news-aggregator.git \
+ADMIN_EMAIL=admin@local \
+ADMIN_PASSWORD=changeme \
+bash /path/to/docs/bare-metal/scripts/install-project.sh
 ```
 
-Clones the fork, generates `.env.local`, runs migrations/seed, compiles assets, and optionally installs systemd user units.
+Use the **absolute path** to `install-project.sh` from your bootstrap checkout (e.g. `/tmp/news/docs/bare-metal/scripts/install-project.sh`), not a path inside the application clone.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `REPO_URL` | *(prompt)* | Git clone URL (required in non-interactive mode) |
-| `PROJECT_DIR` | `$HOME/news-aggregator` | Project root (must match systemd unit paths after templating) |
+| `PROJECT_DIR` | `$HOME/news-aggregator` | Application root |
 | `ADMIN_EMAIL` | *(prompt)* | Admin login email |
-| `ADMIN_PASSWORD` | *(prompt)* | Admin login password (plaintext; hashed at seed time) |
+| `ADMIN_PASSWORD` | *(prompt)* | Admin login password |
 | `PG_PASSWORD_FILE` | `$HOME/.news-aggregator-pg-password` | File written by `install-system.sh` |
-| `PG_PASSWORD` | *(unset)* | Fallback if the password file is missing (manual PostgreSQL setup) |
+| `PG_PASSWORD` | *(unset)* | Override when the password file is missing |
 | `SERVER_NAME` | `:8000` | Caddy listen address (high port for systemd user services) |
 | `MERCURE_BASE_URL` | `http://127.0.0.1:8000` | Site base URL for Mercure (no path suffix) |
 | `MERCURE_PUBLIC_URL` | same as `MERCURE_BASE_URL` | Override when browsers reach the host via another hostname/IP |
-| `INSTALL_SYSTEMD` | `yes` | Install and enable user systemd units |
+| `INSTALL_SYSTEMD` | `yes` | Install, enable, and verify user systemd units |
+| `SYSTEMD_SRC_DIR` | `$SCRIPT_DIR/../systemd` | Override systemd unit templates path |
+| `CADDYFILE_SRC` | `$SCRIPT_DIR/../Caddyfile.example` | Override Caddyfile template path |
+| `CADDYFILE_DEST` | `$HOME/.config/news-aggregator/Caddyfile` | Installed Caddyfile path |
 
 **Non-interactive mode:** export `REPO_URL`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` before running. Without a TTY, missing variables exit with an error.
 
-**Regenerate `.env.local`:** `rm .env.local`, then re-run `install-project.sh` (v1 behaviour — all-or-nothing).
+**Regenerate `.env.local`:** `rm .env.local`, then re-run `install-project.sh`.
 
 **Git updates:** the script does not run `git pull`. Update the checkout manually when needed.
 
 **Clone guard:** if `PROJECT_DIR` exists, is not empty, and contains no `.git` directory, the script exits with an error.
 
-Unit files in `docs/bare-metal/systemd/` use placeholders (`@@PROJECT_DIR@@`, `@@FRANKENPHP_BIN@@`) that `install-project.sh` substitutes via `sed` at install time.
+**Systemd install:** unit templates use placeholders (`@@PROJECT_DIR@@`, `@@FRANKENPHP_BIN@@`, `@@CADDYFILE@@`) substituted at install time. Templates and `Caddyfile.example` are copied from `$SCRIPT_DIR/../`, not from the application clone. If systemd install is skipped, the script logs an explicit message (never silent).
 
 ## Prerequisites
 
@@ -308,8 +364,8 @@ Five Messenger transports are defined in `config/packages/messenger.php`:
 ### Option A — manual (tmux)
 
 ```bash
-# Terminal 1 — web
-frankenphp run --config docs/bare-metal/Caddyfile.example
+# Terminal 1 — web (use the installed Caddyfile, or docs/bare-metal/Caddyfile.example from a checkout)
+frankenphp run --config ~/.config/news-aggregator/Caddyfile
 
 # Terminal 2–5 — workers
 php bin/console messenger:consume async --time-limit=3600
@@ -322,15 +378,18 @@ Set `WorkingDirectory` to the project root and load `.env.local` (Symfony reads 
 
 ### Option B — systemd user services (recommended)
 
-`install-project.sh` substitutes `@@PROJECT_DIR@@` and `@@FRANKENPHP_BIN@@` and installs the units automatically.
+`install-project.sh` copies `Caddyfile.example` to `~/.config/news-aggregator/Caddyfile`, substitutes `@@PROJECT_DIR@@`, `@@FRANKENPHP_BIN@@`, and `@@CADDYFILE@@` in the unit templates, enables all five services, and verifies `:8000` responds before exiting.
 
 Manual equivalent:
 
 ```bash
-mkdir -p ~/.config/systemd/user
-for unit in docs/bare-metal/systemd/news-*.service; do
+mkdir -p ~/.config/news-aggregator ~/.config/systemd/user
+cp /path/to/bootstrap/docs/bare-metal/Caddyfile.example ~/.config/news-aggregator/Caddyfile
+CADDYFILE=$HOME/.config/news-aggregator/Caddyfile
+for unit in /path/to/bootstrap/docs/bare-metal/systemd/news-*.service; do
   sed -e "s|@@PROJECT_DIR@@|${PWD}|g" \
       -e "s|@@FRANKENPHP_BIN@@|$(command -v frankenphp)|g" \
+      -e "s|@@CADDYFILE@@|${CADDYFILE}|g" \
       "$unit" > ~/.config/systemd/user/$(basename "$unit")
 done
 systemctl --user daemon-reload
@@ -346,11 +405,12 @@ journalctl --user -u news-web -f
 
 The web unit loads `EnvironmentFile=<project>/.env.local` for Mercure and `APP_ROOT`.
 
-If `systemctl --user` fails with a missing runtime dir:
+If `systemctl --user` fails with a missing runtime dir, `install-system.sh` already starts `user@<uid>.service` and waits for `/run/user/<uid>`. On manual setups:
 
 ```bash
 export XDG_RUNTIME_DIR=/run/user/$(id -u)
 loginctl enable-linger "$USER"
+sudo systemctl start "user@$(id -u).service"
 ```
 
 ### Option C — Symfony CLI (not recommended)
@@ -365,11 +425,16 @@ Observed issue: `--listen-ip` does not bind as expected in some environments. Pr
 
 | Symptom | Cause / fix |
 |---------|-------------|
+| `git: command not found` / `switch 'b' requires a value` | Fresh LXC without git, or a long install command split across lines when copy-pasting. Use `install.sh` in two steps (curl, then bash). |
+| `PostgreSQL password not found` | Run `install-system.sh` first (as root). Check `/home/app/.news-aggregator-pg-password` exists and is non-empty. |
+| `Skipping systemd installation` in logs | Bootstrap assets missing at `$SYSTEMD_SRC_DIR` or `$CADDYFILE_SRC`. Run scripts from the bootstrap checkout, not only from the app clone. |
+| `Caddyfile.example: no such file` in `news-web` journal | Old units pointed at the app clone. Re-run `install-project.sh` or regenerate units with `@@CADDYFILE@@` → `~/.config/news-aggregator/Caddyfile`. |
+| `news-web did not start listening on :8000` | Check `journalctl --user -u news-web -n 50`. Common causes: missing Caddyfile, bad `.env.local`, FrankenPHP crash. |
 | `TS2451` / `TS2393` on `tsc` | Global const/function collisions across `assets/ts/*.ts`. Use Bun per-file build (see above). |
 | Invalid credentials after seed | (1) Set `ADMIN_PASSWORD`, not `ADMIN_PASSWORD_HASH`. (2) User already existed — seed skipped password update. Run `DELETE FROM "user"` then re-seed. (3) `ADMIN_EMAIL` mismatch. |
-| `systemctl --user` fails | Set `XDG_RUNTIME_DIR=/run/user/$(id -u)`; enable lingering with `loginctl enable-linger`. |
+| `systemctl --user` fails | Set `XDG_RUNTIME_DIR=/run/user/$(id -u)`; enable lingering; start `user@<uid>.service` as root. |
 | Symfony server bind errors | Use FrankenPHP + systemd (option B) instead of `symfony server:start`. |
-| Mercure/SSE not working | Verify all Mercure env vars; web must use `frankenphp run` + `Caddyfile.example`, not `frankenphp php-server`. |
+| Mercure/SSE not working | Verify all Mercure env vars; web must use `frankenphp run` + Caddyfile, not `frankenphp php-server`. |
 | Search returns nothing | Run `php bin/console app:search-reindex`. |
 
 ## Development workflow

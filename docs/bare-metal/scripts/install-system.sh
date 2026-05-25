@@ -373,7 +373,8 @@ verify_post_install
 
 log "System install complete"
 log "PostgreSQL password: ${PG_PASSWORD_FILE}"
-log "Next (as ${APP_USER}): bash ${SCRIPT_DIR}/install-project.sh"
+log "Next: ADMIN_EMAIL=... ADMIN_PASSWORD=... bash ${SCRIPT_DIR}/install-project.sh"
+log "Or full bootstrap: ADMIN_EMAIL=... ADMIN_PASSWORD=... bash ${SCRIPT_DIR}/install.sh"
 if [ -r "$PG_PASSWORD_FILE" ]; then
   log "Secret file ready at ${PG_PASSWORD_FILE}"
 fi

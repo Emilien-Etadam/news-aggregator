@@ -12,6 +12,15 @@
 
 See [docs/bare-metal-setup.md](docs/bare-metal-setup.md) for a full install without Docker.
 
+Quick start on a fresh Debian 13 host as root:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Emilien-Etadam/news-aggregator/docs/bare-metal-setup/docs/bare-metal/scripts/install.sh -o /root/install.sh
+ADMIN_EMAIL=admin@local ADMIN_PASSWORD=changeme bash /root/install.sh
+```
+
+Scripts are also available under `docs/bare-metal/scripts/` (`install.sh`, `install-system.sh`, `install-project.sh`).
+
 ## Code Quality
 
 All code must pass quality checks before merging:
