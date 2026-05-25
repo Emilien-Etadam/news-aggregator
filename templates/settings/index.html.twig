@@ -3,6 +3,8 @@
 {% block body %}
     <h1 class="text-2xl font-bold mb-6">Settings</h1>
 
+    <div id="settings-save-feedback" aria-live="polite"></div>
+
     <div class="grid gap-4 max-w-lg">
         <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
@@ -32,6 +34,7 @@
               hx-post="{{ path('app_settings_save') }}"
               hx-target="#save-result"
               hx-swap="innerHTML"
+              hx-indicator="#save-spinner"
         >
             <div class="card-body">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token('settings_save') }}">
@@ -104,6 +107,21 @@
                                class="input input-bordered input-sm"
                                autocomplete="new-password"
                                placeholder="{% if openAiApiKeyConfigured %}Leave blank to keep current key{% else %}Required{% endif %}">
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline"
+                            hx-post="{{ path('app_settings_test_ai_connection') }}"
+                            hx-include="#ai-openai-fields"
+                            hx-headers='{"X-CSRF-Token": "{{ csrf_token('test_ai_connection') }}"}'
+                            hx-target="#test-ai-connection-result"
+                            hx-swap="innerHTML"
+                        >
+                            Test Connection
+                        </button>
+                        <span id="test-ai-connection-result"></span>
                     </div>
                 </div>
 
@@ -188,7 +206,10 @@
                 </div>
 
                 <div class="card-actions mt-2 flex items-center gap-2">
-                    <button type="submit" class="btn btn-primary btn-sm">Save Settings</button>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        Save Settings
+                        <span id="save-spinner" class="htmx-indicator loading loading-spinner loading-xs"></span>
+                    </button>
                     <span id="save-result"></span>
                 </div>
             </div>

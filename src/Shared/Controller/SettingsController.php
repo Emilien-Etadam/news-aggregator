@@ -49,17 +49,21 @@ final class SettingsController
         $token = $request->request->getString('_csrf_token');
 
         if (! $this->controller->isCsrfTokenValid('settings_save', $token)) {
-            return new Response('Invalid CSRF token.', Response::HTTP_FORBIDDEN);
+            return $this->saveErrorResponse($request, 'Invalid CSRF token.', Response::HTTP_FORBIDDEN);
         }
 
         $aiError = $this->saveAiProviderSettings($request);
         if ($aiError !== null) {
-            return new Response(
-                sprintf('<span class="text-error">%s</span>', htmlspecialchars($aiError, ENT_QUOTES)),
-                Response::HTTP_UNPROCESSABLE_ENTITY,
-            );
+            return $this->saveErrorResponse($request, $aiError, Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
+        $this->saveGeneralSettings($request);
+
+        return $this->saveSuccessResponse($request);
+    }
+
+    private function saveGeneralSettings(Request $request): void
+    {
         $allSettings = $this->settingsService->getAll();
 
         foreach (array_keys($allSettings) as $key) {
@@ -73,14 +77,56 @@ final class SettingsController
                 $this->settingsService->set($key, $value);
             }
         }
+    }
 
-        if ($request->headers->has('HX-Request')) {
+    private function saveSuccessResponse(Request $request): Response
+    {
+        if ($this->isHtmxRequest($request)) {
             return new Response(
-                '<span class="text-success">Settings saved.</span>',
+                $this->buildSaveFeedbackResponse('success', 'Settings saved successfully.'),
             );
         }
 
+        $this->controller->addFlash('success', 'Settings saved successfully.');
+
         return $this->controller->redirectToRoute('app_settings');
+    }
+
+    private function saveErrorResponse(Request $request, string $message, int $statusCode): Response
+    {
+        if ($this->isHtmxRequest($request)) {
+            return new Response(
+                $this->buildSaveFeedbackResponse('error', $message),
+                $statusCode,
+            );
+        }
+
+        return new Response(
+            sprintf('<span class="text-error">%s</span>', htmlspecialchars($message, ENT_QUOTES)),
+            $statusCode,
+        );
+    }
+
+    private function isHtmxRequest(Request $request): bool
+    {
+        return $request->headers->has('HX-Request');
+    }
+
+    private function buildSaveFeedbackResponse(string $level, string $message): string
+    {
+        $alertClass = $level === 'success' ? 'alert-success' : 'alert-error';
+        $badgeClass = $level === 'success' ? 'badge-success' : 'badge-error';
+        $badgeLabel = $level === 'success' ? 'Saved' : 'Save failed';
+        $escapedMessage = htmlspecialchars($message, ENT_QUOTES);
+
+        return sprintf(
+            '<div id="settings-save-feedback" hx-swap-oob="innerHTML" class="alert %s shadow-sm max-w-lg"><span>%s</span></div>'
+            . '<span class="badge %s badge-sm">%s</span>',
+            $alertClass,
+            $escapedMessage,
+            $badgeClass,
+            $badgeLabel,
+        );
     }
 
     private function saveAiProviderSettings(Request $request): ?string

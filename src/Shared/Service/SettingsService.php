@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Shared\Service;
 
-use App\Shared\ValueObject\AiProvider;
-
 use App\Shared\Entity\Setting;
 use App\Shared\Repository\SettingRepositoryInterface;
+use App\Shared\ValueObject\AiProvider;
 
 final readonly class SettingsService implements SettingsServiceInterface
 {

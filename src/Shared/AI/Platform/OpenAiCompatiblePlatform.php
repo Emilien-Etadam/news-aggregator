@@ -54,7 +54,7 @@ final class OpenAiCompatiblePlatform implements PlatformInterface
         $baseUrl = $this->normalizeBaseUrl($this->settings->getOpenAiBaseUrl());
         $apiKey = $this->settings->getOpenAiApiKey();
         $model = $this->settings->getOpenAiModel();
-        $hash = $baseUrl.'|'.$apiKey.'|'.$model;
+        $hash = $baseUrl . '|' . $apiKey . '|' . $model;
 
         if ($this->platform instanceof Platform && $this->configHash === $hash) {
             return $this->platform;
@@ -84,12 +84,6 @@ final class OpenAiCompatiblePlatform implements PlatformInterface
 
     private function normalizeBaseUrl(string $url): string
     {
-        $normalized = rtrim(trim($url), '/');
-
-        if (str_ends_with($normalized, '/v1')) {
-            $normalized = substr($normalized, 0, -3);
-        }
-
-        return rtrim($normalized, '/');
+        return OpenAiCompatibleUrlNormalizer::normalize($url);
     }
 }
