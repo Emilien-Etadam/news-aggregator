@@ -232,11 +232,14 @@ return static function (ContainerConfigurator $container): void {
         ->arg('$retentionArticles', '%env(int:RETENTION_ARTICLES)%')
         ->arg('$retentionLogs', '%env(int:RETENTION_LOGS)%')
         ->arg('$defaultAiProvider', '%env(default:ai_provider_default:AI_PROVIDER)%')
-        ->arg('$defaultAiOpenAiBaseUrl', '%env(default::AI_OPENAI_BASE_URL)%')
-        ->arg('$defaultAiOpenAiApiKey', '%env(default::AI_OPENAI_API_KEY)%')
-        ->arg('$defaultAiOpenAiModel', '%env(default::AI_OPENAI_MODEL)%');
+        ->arg('$defaultAiOpenAiBaseUrl', '%env(default:ai_openai_base_url_default:AI_OPENAI_BASE_URL)%')
+        ->arg('$defaultAiOpenAiApiKey', '%env(default:ai_openai_api_key_default:AI_OPENAI_API_KEY)%')
+        ->arg('$defaultAiOpenAiModel', '%env(default:ai_openai_model_default:AI_OPENAI_MODEL)%');
 
     $container->parameters()->set('ai_provider_default', 'openrouter');
+    $container->parameters()->set('ai_openai_base_url_default', '');
+    $container->parameters()->set('ai_openai_api_key_default', '');
+    $container->parameters()->set('ai_openai_model_default', '');
 
     $services->alias(SettingsServiceInterface::class, SettingsService::class);
 
