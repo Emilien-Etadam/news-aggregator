@@ -5,6 +5,9 @@
 #
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SYSTEMD_SRC_DIR="${SYSTEMD_SRC_DIR:-$SCRIPT_DIR/../systemd}"
+
 REPO_URL="${REPO_URL:-}"
 PROJECT_DIR="${PROJECT_DIR:-$HOME/news-aggregator}"
 ADMIN_EMAIL="${ADMIN_EMAIL:-}"
@@ -134,7 +137,7 @@ install_systemd_units() {
   export XDG_RUNTIME_DIR="/run/user/$(id -u)"
   mkdir -p ~/.config/systemd/user
 
-  for src in docs/bare-metal/systemd/news-*.service; do
+  for src in "$SYSTEMD_SRC_DIR"/news-*.service; do
     dest="$HOME/.config/systemd/user/$(basename "$src")"
     sed \
       -e "s|@@PROJECT_DIR@@|${project_dir_escaped}|g" \
@@ -237,10 +240,12 @@ bun build assets/ts/*.ts --outdir=assets/js/ --root=assets/ts
 log "Compiling Symfony assets"
 php bin/console asset-map:compile
 
-if [ "$INSTALL_SYSTEMD" = "yes" ] && [ -d docs/bare-metal/systemd ]; then
-  log "Installing systemd user units"
+if [ "$INSTALL_SYSTEMD" = "yes" ] && [ -d "$SYSTEMD_SRC_DIR" ]; then
+  log "Installing systemd user units from $SYSTEMD_SRC_DIR"
   install_systemd_units
   start_systemd_services
+else
+  log "Skipping systemd installation (INSTALL_SYSTEMD=$INSTALL_SYSTEMD, dir=$SYSTEMD_SRC_DIR)"
 fi
 
 verify_post_install
