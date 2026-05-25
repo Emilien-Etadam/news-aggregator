@@ -15,7 +15,7 @@ See [docs/bare-metal-setup.md](docs/bare-metal-setup.md) for a full install with
 Quick start on a fresh Debian 13 host as root:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Emilien-Etadam/news-aggregator/docs/bare-metal-setup/docs/bare-metal/scripts/install.sh -o /root/install.sh
+curl -fsSL https://raw.githubusercontent.com/tony-stark-eth/news-aggregator/main/docs/bare-metal/scripts/install.sh -o /root/install.sh
 ADMIN_EMAIL=admin@local ADMIN_PASSWORD=changeme bash /root/install.sh
 ```
 

@@ -13,10 +13,10 @@ On a **fresh Debian 13** host as **root**. Use two short commands (avoid pasting
 **1. Download the installer**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Emilien-Etadam/news-aggregator/docs/bare-metal-setup/docs/bare-metal/scripts/install.sh -o /root/install.sh
+curl -fsSL https://raw.githubusercontent.com/tony-stark-eth/news-aggregator/main/docs/bare-metal/scripts/install.sh -o /root/install.sh
 ```
 
-Replace `Emilien-Etadam/news-aggregator` with your fork if needed. The default branch for bootstrap assets is `docs/bare-metal-setup`.
+The bootstrap scripts must exist on the branch you fetch (typically `main` after this PR is merged). When testing from a feature branch, set `INSTALL_BRANCH` or clone that branch manually.
 
 **2. Run the installer**
 
@@ -30,8 +30,8 @@ At the end, the script verifies that `news-web` listens on `:8000` and returns H
 |----------|---------|-------------|
 | `ADMIN_EMAIL` | *(required)* | Admin login email |
 | `ADMIN_PASSWORD` | *(required)* | Admin login password (plaintext; hashed at seed time) |
-| `REPO_URL` | `https://github.com/Emilien-Etadam/news-aggregator.git` | Git URL for the **application** clone (into `/home/app/news-aggregator`) |
-| `INSTALL_BRANCH` | `docs/bare-metal-setup` | Branch used to fetch bootstrap scripts when not run from a checkout |
+| `REPO_URL` | `https://github.com/tony-stark-eth/news-aggregator.git` | Git URL for the **application** clone (into `/home/app/news-aggregator`) |
+| `INSTALL_BRANCH` | `main` | Branch used to fetch bootstrap scripts when not run from a checkout |
 | `CLONE_DIR` | `/tmp/news` | Where bootstrap scripts are cloned when using `curl -o install.sh` |
 | `APP_USER` | `app` | Unix account created by `install-system.sh` |
 

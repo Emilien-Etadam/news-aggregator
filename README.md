@@ -108,11 +108,11 @@ Full guide: [docs/bare-metal-setup.md](docs/bare-metal-setup.md)
 On a fresh Debian 13 host as **root**, download and run the one-shot installer (two commands — do not paste as one long line):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Emilien-Etadam/news-aggregator/docs/bare-metal-setup/docs/bare-metal/scripts/install.sh -o /root/install.sh
+curl -fsSL https://raw.githubusercontent.com/tony-stark-eth/news-aggregator/main/docs/bare-metal/scripts/install.sh -o /root/install.sh
 ADMIN_EMAIL=admin@local ADMIN_PASSWORD=changeme bash /root/install.sh
 ```
 
-Replace the GitHub URL with your fork if needed. At the end, open `http://<host>:8000`.
+At the end, open `http://<host>:8000`.
 
 ## Configuration
 

@@ -4,7 +4,7 @@
 # Run as root.
 #
 # Recommended (avoids broken copy/paste from chat clients):
-#   curl -fsSL https://raw.githubusercontent.com/Emilien-Etadam/news-aggregator/docs/bare-metal-setup/docs/bare-metal/scripts/install.sh -o /root/install.sh
+#   curl -fsSL https://raw.githubusercontent.com/tony-stark-eth/news-aggregator/main/docs/bare-metal/scripts/install.sh -o /root/install.sh
 #   ADMIN_EMAIL=admin@local ADMIN_PASSWORD=changeme bash /root/install.sh
 #
 # Or after cloning this repository:
@@ -12,8 +12,8 @@
 #
 set -euo pipefail
 
-REPO_URL="${REPO_URL:-https://github.com/Emilien-Etadam/news-aggregator.git}"
-INSTALL_BRANCH="${INSTALL_BRANCH:-docs/bare-metal-setup}"
+REPO_URL="${REPO_URL:-https://github.com/tony-stark-eth/news-aggregator.git}"
+INSTALL_BRANCH="${INSTALL_BRANCH:-main}"
 CLONE_DIR="${CLONE_DIR:-/tmp/news}"
 APP_USER="${APP_USER:-app}"
 ADMIN_EMAIL="${ADMIN_EMAIL:-}"
