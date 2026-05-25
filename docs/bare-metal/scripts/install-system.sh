@@ -221,6 +221,8 @@ bootstrap_postgresql() {
 
   setup_sql=$(mktemp)
   chmod 600 "$setup_sql"
+  # shellcheck disable=SC2064
+  trap "rm -f '$setup_sql'" EXIT
 
   if [ -n "$PG_PASSWORD" ]; then
     pass_escaped=$(sql_escape "$PG_PASSWORD")
@@ -242,8 +244,10 @@ bootstrap_postgresql() {
     printf "WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'app_test')\\gexec\n"
   } >"$setup_sql"
 
+  chown postgres:postgres "$setup_sql"
   sudo -u postgres psql -v ON_ERROR_STOP=1 -f "$setup_sql"
   rm -f "$setup_sql"
+  trap - EXIT
 
   sudo -u postgres psql -d app -c "CREATE EXTENSION IF NOT EXISTS vector;"
   sudo -u postgres psql -d app_test -c "CREATE EXTENSION IF NOT EXISTS vector;"
