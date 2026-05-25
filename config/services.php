@@ -295,7 +295,7 @@ return static function (ContainerConfigurator $container): void {
 
     // Chat: streaming service uses platform directly (bypasses Agent for real SSE streaming)
     $services->set(StreamingChatService::class)
-        ->arg('$platform', service('ai.platform.openrouter'));
+        ->arg('$platform', service('ai.platform.settings_routed'));
 
     $services->alias(StreamingChatServiceInterface::class, StreamingChatService::class);
 
