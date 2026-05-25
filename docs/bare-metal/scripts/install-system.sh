@@ -10,6 +10,7 @@ SURY_FALLBACK="${SURY_FALLBACK:-auto}"  # auto|yes|no
 FRANKENPHP_VERSION="${FRANKENPHP_VERSION:-latest}"
 PG_PASSWORD="${PG_PASSWORD-}"
 PG_PASSWORD_PROVIDED=0
+PG_FORCE_PASSWORD_UPDATE=0
 PG_PASSWORD_FILE="/home/${APP_USER}/.news-aggregator-pg-password"
 
 if [ "${PG_PASSWORD+set}" = set ]; then
@@ -158,7 +159,7 @@ resolve_pg_password() {
 
   if pg_role_exists && [ "$PG_PASSWORD_PROVIDED" -eq 0 ] && [ ! -r "$PG_PASSWORD_FILE" ]; then
     log "PostgreSQL role 'app' already exists; skipping password setup (set PG_PASSWORD or create ${PG_PASSWORD_FILE} to manage it)"
-    printf '0'
+    PG_FORCE_PASSWORD_UPDATE=0
     return 0
   fi
 
@@ -189,7 +190,7 @@ resolve_pg_password() {
     log "PostgreSQL password stored in ${PG_PASSWORD_FILE}"
   fi
 
-  printf '%s' "$force_update"
+  PG_FORCE_PASSWORD_UPDATE=$force_update
 }
 
 pg_role_exists() {
@@ -214,10 +215,14 @@ assert_database_owner() {
 
 bootstrap_postgresql() {
   local force_password_update=$1
-  local pass_escaped setup_sql
+  local pass_escaped setup_sql role_exists=0
 
   assert_database_owner "app"
   assert_database_owner "app_test"
+
+  if pg_role_exists; then
+    role_exists=1
+  fi
 
   setup_sql=$(mktemp)
   chmod 600 "$setup_sql"
@@ -230,13 +235,11 @@ bootstrap_postgresql() {
 
   {
     if [ -n "$PG_PASSWORD" ]; then
-      printf 'DO $$\nBEGIN\n'
-      if ! pg_role_exists; then
-        printf "  EXECUTE format('CREATE ROLE app LOGIN PASSWORD %%L', '%s');\n" "$pass_escaped"
+      if [ "$role_exists" -eq 0 ]; then
+        printf "CREATE ROLE app WITH LOGIN PASSWORD '%s';\n" "$pass_escaped"
       elif [ "$force_password_update" -eq 1 ]; then
-        printf "  EXECUTE format('ALTER ROLE app PASSWORD %%L', '%s');\n" "$pass_escaped"
+        printf "ALTER ROLE app WITH PASSWORD '%s';\n" "$pass_escaped"
       fi
-      printf 'END\n$$;\n'
     fi
     printf "SELECT format('CREATE DATABASE %%I OWNER app', 'app')\n"
     printf "WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'app')\\gexec\n"
@@ -332,8 +335,8 @@ loginctl enable-linger "$APP_USER"
 log "PostgreSQL bootstrap"
 systemctl enable --now postgresql
 
-force_password_update=$(resolve_pg_password)
-bootstrap_postgresql "$force_password_update"
+resolve_pg_password
+bootstrap_postgresql "$PG_FORCE_PASSWORD_UPDATE"
 
 verify_post_install
 
