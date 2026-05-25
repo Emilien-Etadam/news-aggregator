@@ -7,6 +7,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SYSTEMD_SRC_DIR="${SYSTEMD_SRC_DIR:-$SCRIPT_DIR/../systemd}"
+CADDYFILE_SRC="${CADDYFILE_SRC:-$SCRIPT_DIR/../Caddyfile.example}"
+CADDYFILE_DEST="${CADDYFILE_DEST:-$HOME/.config/news-aggregator/Caddyfile}"
 
 REPO_URL="${REPO_URL:-}"
 PROJECT_DIR="${PROJECT_DIR:-$HOME/news-aggregator}"
@@ -159,13 +161,21 @@ warn_existing_admin() {
 }
 
 install_systemd_units() {
-  local frankenphp_bin project_dir_escaped frankenphp_escaped unit src dest
+  local frankenphp_bin project_dir_escaped frankenphp_escaped caddyfile_escaped src dest
 
   frankenphp_bin=$(command -v frankenphp)
   [ -n "$frankenphp_bin" ] || err "frankenphp not found in PATH"
+  [ -f "$CADDYFILE_SRC" ] || err "Caddyfile not found at ${CADDYFILE_SRC}"
 
   project_dir_escaped=$(sed_escape "$PROJECT_DIR")
   frankenphp_escaped=$(sed_escape "$frankenphp_bin")
+
+  mkdir -p "$(dirname "$CADDYFILE_DEST")"
+  cp "$CADDYFILE_SRC" "$CADDYFILE_DEST"
+  chmod 644 "$CADDYFILE_DEST"
+  log "Caddyfile installed at ${CADDYFILE_DEST}"
+
+  caddyfile_escaped=$(sed_escape "$CADDYFILE_DEST")
 
   export XDG_RUNTIME_DIR="/run/user/$(id -u)"
   mkdir -p ~/.config/systemd/user
@@ -175,6 +185,7 @@ install_systemd_units() {
     sed \
       -e "s|@@PROJECT_DIR@@|${project_dir_escaped}|g" \
       -e "s|@@FRANKENPHP_BIN@@|${frankenphp_escaped}|g" \
+      -e "s|@@CADDYFILE@@|${caddyfile_escaped}|g" \
       "$src" >"$dest"
   done
 }
@@ -275,12 +286,12 @@ bun build assets/ts/*.ts --outdir=assets/js/ --root=assets/ts
 log "Compiling Symfony assets"
 php bin/console asset-map:compile
 
-if [ "$INSTALL_SYSTEMD" = "yes" ] && [ -d "$SYSTEMD_SRC_DIR" ]; then
+if [ "$INSTALL_SYSTEMD" = "yes" ] && [ -d "$SYSTEMD_SRC_DIR" ] && [ -f "$CADDYFILE_SRC" ]; then
   log "Installing systemd user units from $SYSTEMD_SRC_DIR"
   install_systemd_units
   start_systemd_services
 else
-  log "Skipping systemd installation (INSTALL_SYSTEMD=$INSTALL_SYSTEMD, dir=$SYSTEMD_SRC_DIR)"
+  log "Skipping systemd installation (INSTALL_SYSTEMD=$INSTALL_SYSTEMD, systemd_dir=$SYSTEMD_SRC_DIR, caddyfile=$CADDYFILE_SRC)"
 fi
 
 verify_post_install
