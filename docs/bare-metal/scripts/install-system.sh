@@ -13,7 +13,7 @@ PG_PASSWORD_PROVIDED=0
 PG_FORCE_PASSWORD_UPDATE=0
 PG_PASSWORD_FILE="/home/${APP_USER}/.news-aggregator-pg-password"
 
-if [ "${PG_PASSWORD+set}" = set ]; then
+if [ -n "${PG_PASSWORD:-}" ]; then
   PG_PASSWORD_PROVIDED=1
 fi
 
@@ -170,8 +170,8 @@ resolve_pg_password() {
   fi
 
   if [ "$role_exists" -eq 0 ]; then
-    if [ "$PG_PASSWORD_PROVIDED" -eq 0 ]; then
-      PG_PASSWORD=$(openssl rand -hex 16)
+    if [ -z "$PG_PASSWORD" ]; then
+      PG_PASSWORD=$(openssl rand -hex 24)
     fi
     force_update=1
     write_file=1
@@ -196,6 +196,13 @@ resolve_pg_password() {
   fi
 
   if [ "$write_file" -eq 1 ]; then
+    if [ -z "$PG_PASSWORD" ]; then
+      PG_PASSWORD=$(openssl rand -hex 24)
+    fi
+    if [ -z "$PG_PASSWORD" ]; then
+      echo "FATAL: PG_PASSWORD empty before writing secret file" >&2
+      exit 1
+    fi
     umask 077
     printf '%s' "$PG_PASSWORD" >"$PG_PASSWORD_FILE"
     chown "${APP_USER}:${APP_USER}" "$PG_PASSWORD_FILE"
