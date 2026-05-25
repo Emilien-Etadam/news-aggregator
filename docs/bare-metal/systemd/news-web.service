@@ -1,0 +1,17 @@
+[Unit]
+Description=News Aggregator - FrankenPHP web server
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/news-aggregator
+EnvironmentFile=%h/news-aggregator/.env.local
+ExecStart=/usr/local/bin/frankenphp run --config %h/news-aggregator/docs/bare-metal/Caddyfile.example
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

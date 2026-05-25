@@ -2,9 +2,15 @@
 
 ## Development Setup
 
+### Docker (default)
+
 1. Clone the repository
 2. Run `make start` to build and start Docker containers
 3. Run `make hooks` to install git hooks
+
+### Bare metal (Debian 13)
+
+See [docs/bare-metal-setup.md](docs/bare-metal-setup.md) for a full install without Docker.
 
 ## Code Quality
 
