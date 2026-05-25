@@ -2,6 +2,63 @@
 
 Install and run the news-aggregator on Debian 13 without Docker. For the Docker workflow, see [CONTRIBUTING.md](../CONTRIBUTING.md).
 
+## Automated install (recommended)
+
+Two idempotent scripts under `docs/bare-metal/scripts/` automate the manual steps below.
+
+### 1. System packages (as root)
+
+```bash
+sudo docs/bare-metal/scripts/install-system.sh
+```
+
+Installs APT packages, optional Sury PHP fallback, Composer, FrankenPHP (with SHA256 verification), PostgreSQL bootstrap, and the dedicated app user.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `APP_USER` | `app` | Unix account for the app and systemd user units |
+| `PG_PASSWORD` | *(auto)* | PostgreSQL password for role `app`. If unset, a random password is generated once and stored in `/home/<APP_USER>/.news-aggregator-pg-password` |
+| `SURY_FALLBACK` | `auto` | `auto` \| `yes` \| `no` — add Sury PHP repo when Debian PHP &lt; 8.4.19 |
+| `FRANKENPHP_VERSION` | `latest` | GitHub release tag (e.g. `v1.12.3`) or `latest`. Binary URL: `https://github.com/php/frankenphp/releases/download/<tag>/frankenphp-linux-<arch>`. Checksum verified via `sha256sum -c` (API digest when no `.sha256` sidecar file). On GitHub API rate limit (HTTP 403), pin this variable and retry. |
+
+Re-running is safe: the PostgreSQL password is **not** rotated unless `PG_PASSWORD` is set explicitly.
+
+If role `app` already exists (manual setup) and `${PG_PASSWORD_FILE}` is absent, password management is skipped — databases and extensions are still ensured. Set `PG_PASSWORD` or create the password file to take control.
+
+Pre-existing databases `app` / `app_test` owned by another role cause a hard exit (no modification).
+
+### 2. Project bootstrap (as app user)
+
+```bash
+su - app
+docs/bare-metal/scripts/install-project.sh
+```
+
+Clones the fork, generates `.env.local`, runs migrations/seed, compiles assets, and optionally installs systemd user units.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `REPO_URL` | *(prompt)* | Git clone URL (required in non-interactive mode) |
+| `PROJECT_DIR` | `$HOME/news-aggregator` | Project root (must match systemd unit paths after templating) |
+| `ADMIN_EMAIL` | *(prompt)* | Admin login email |
+| `ADMIN_PASSWORD` | *(prompt)* | Admin login password (plaintext; hashed at seed time) |
+| `PG_PASSWORD_FILE` | `$HOME/.news-aggregator-pg-password` | File written by `install-system.sh` |
+| `PG_PASSWORD` | *(unset)* | Fallback if the password file is missing (manual PostgreSQL setup) |
+| `SERVER_NAME` | `:8000` | Caddy listen address (high port for systemd user services) |
+| `MERCURE_BASE_URL` | `http://127.0.0.1:8000` | Site base URL for Mercure (no path suffix) |
+| `MERCURE_PUBLIC_URL` | same as `MERCURE_BASE_URL` | Override when browsers reach the host via another hostname/IP |
+| `INSTALL_SYSTEMD` | `yes` | Install and enable user systemd units |
+
+**Non-interactive mode:** export `REPO_URL`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` before running. Without a TTY, missing variables exit with an error.
+
+**Regenerate `.env.local`:** `rm .env.local`, then re-run `install-project.sh` (v1 behaviour — all-or-nothing).
+
+**Git updates:** the script does not run `git pull`. Update the checkout manually when needed.
+
+**Clone guard:** if `PROJECT_DIR` exists, is not empty, and contains no `.git` directory, the script exits with an error.
+
+Unit files in `docs/bare-metal/systemd/` use placeholders (`@@PROJECT_DIR@@`, `@@FRANKENPHP_BIN@@`) that `install-project.sh` substitutes via `sed` at install time.
+
 ## Prerequisites
 
 | Component | Version / notes |
@@ -96,7 +153,7 @@ sudo adduser --disabled-password --gecos "" app
 sudo loginctl enable-linger app
 ```
 
-Clone and operate the project as this user (`%h` in unit files = `/home/app`).
+Clone and operate the project as this user. With the automated scripts, `PROJECT_DIR` defaults to `/home/app/news-aggregator`.
 
 ## PostgreSQL
 
@@ -152,17 +209,19 @@ ADMIN_PASSWORD=CHANGE_ME
 
 # Bare-metal paths (required for Caddyfile.example)
 APP_ROOT=/home/app/news-aggregator
-SERVER_NAME=localhost
+SERVER_NAME=:8000
 
 # Mercure — Symfony publisher
-MERCURE_URL=http://127.0.0.1/.well-known/mercure
-MERCURE_PUBLIC_URL=http://127.0.0.1/.well-known/mercure
+MERCURE_URL=http://127.0.0.1:8000/.well-known/mercure
+MERCURE_PUBLIC_URL=http://127.0.0.1:8000/.well-known/mercure
 MERCURE_JWT_SECRET=<generated-hex>
 
 # Mercure — Caddy hub (same secret as MERCURE_JWT_SECRET)
 MERCURE_PUBLISHER_JWT_KEY=<generated-hex>
 MERCURE_SUBSCRIBER_JWT_KEY=<generated-hex>
 ```
+
+`SERVER_NAME=:8000` binds a high port so systemd user services (non-root) can listen without capabilities. Option B (systemd) is the target bare-metal layout.
 
 #### Admin password
 
@@ -182,9 +241,9 @@ MERCURE_SUBSCRIBER_JWT_KEY=<generated-hex>
 
 Generate one secret with `openssl rand -hex 32` and reuse it for all five Mercure-related values unless you have a reason to split them.
 
-Adjust `MERCURE_PUBLIC_URL` to match how you reach the host (hostname, port, TLS).
+Adjust `MERCURE_PUBLIC_URL` to match how you reach the host (hostname, port, TLS). Keep `MERCURE_URL` (Symfony server-side) and `MERCURE_PUBLIC_URL` (browser SSE) as **full URLs including the `/.well-known/mercure` path** — they are independent of `SERVER_NAME`.
 
-For ports below 1024, either run FrankenPHP as root (not recommended) or bind to a high port:
+For a different listen port:
 
 ```dotenv
 SERVER_NAME=:8080
@@ -198,18 +257,21 @@ MERCURE_PUBLIC_URL=http://127.0.0.1:8080/.well-known/mercure
 php bin/console doctrine:migrations:migrate --no-interaction
 php bin/console app:seed-data
 php bin/console app:search-reindex
+php bin/console asset-map:compile
 ```
+
+`asset-map:compile` mirrors the Docker image build step and validates AssetMapper imports.
 
 `app:seed-data` creates categories, sources, the admin user, and digest configs. It **skips the admin user if one already exists** (`UserRepository::findFirst()` in `SeedDataCommand`) — it does not update the password.
 
-**Reset admin credentials:**
+**Reset admin credentials** (required when changing `ADMIN_EMAIL` / `ADMIN_PASSWORD` after the first seed):
 
 ```bash
 php bin/console dbal:run-sql 'DELETE FROM "user"'
 php bin/console app:seed-data
 ```
 
-Ensure `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env.local` match what you expect before re-seeding.
+Ensure `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env.local` match what you expect before re-seeding. `install-project.sh` prints this procedure when it detects an existing admin row.
 
 ### TypeScript
 
@@ -260,11 +322,17 @@ Set `WorkingDirectory` to the project root and load `.env.local` (Symfony reads 
 
 ### Option B — systemd user services (recommended)
 
-Install unit files (adjust `php` / `frankenphp` paths if needed):
+`install-project.sh` substitutes `@@PROJECT_DIR@@` and `@@FRANKENPHP_BIN@@` and installs the units automatically.
+
+Manual equivalent:
 
 ```bash
 mkdir -p ~/.config/systemd/user
-cp docs/bare-metal/systemd/news-*.service ~/.config/systemd/user/
+for unit in docs/bare-metal/systemd/news-*.service; do
+  sed -e "s|@@PROJECT_DIR@@|${PWD}|g" \
+      -e "s|@@FRANKENPHP_BIN@@|$(command -v frankenphp)|g" \
+      "$unit" > ~/.config/systemd/user/$(basename "$unit")
+done
 systemctl --user daemon-reload
 systemctl --user enable --now news-web news-worker-async news-worker-enrich news-worker-fulltext news-scheduler
 ```
@@ -276,7 +344,7 @@ systemctl --user status news-web
 journalctl --user -u news-web -f
 ```
 
-The web unit loads `EnvironmentFile=%h/news-aggregator/.env.local` for Mercure and `APP_ROOT`.
+The web unit loads `EnvironmentFile=<project>/.env.local` for Mercure and `APP_ROOT`.
 
 If `systemctl --user` fails with a missing runtime dir:
 

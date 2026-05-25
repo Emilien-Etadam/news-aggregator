@@ -5,7 +5,7 @@ Wants=postgresql.service
 
 [Service]
 Type=simple
-WorkingDirectory=%h/news-aggregator
+WorkingDirectory=@@PROJECT_DIR@@
 ExecStart=/usr/bin/php bin/console messenger:consume async_enrich --time-limit=3600 --memory-limit=512M
 Restart=on-failure
 RestartSec=5

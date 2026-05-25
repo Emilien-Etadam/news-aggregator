@@ -5,9 +5,9 @@ Wants=postgresql.service
 
 [Service]
 Type=simple
-WorkingDirectory=%h/news-aggregator
-EnvironmentFile=%h/news-aggregator/.env.local
-ExecStart=/usr/local/bin/frankenphp run --config %h/news-aggregator/docs/bare-metal/Caddyfile.example
+WorkingDirectory=@@PROJECT_DIR@@
+EnvironmentFile=@@PROJECT_DIR@@/.env.local
+ExecStart=@@FRANKENPHP_BIN@@ run --config @@PROJECT_DIR@@/docs/bare-metal/Caddyfile.example
 Restart=on-failure
 RestartSec=5
 StandardOutput=journal
