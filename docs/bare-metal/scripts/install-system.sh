@@ -5,6 +5,8 @@
 #
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 APP_USER="${APP_USER:-app}"
 SURY_FALLBACK="${SURY_FALLBACK:-auto}"  # auto|yes|no
 FRANKENPHP_VERSION="${FRANKENPHP_VERSION:-latest}"
@@ -370,7 +372,8 @@ bootstrap_postgresql "$PG_FORCE_PASSWORD_UPDATE"
 verify_post_install
 
 log "System install complete"
-log "Next: su - ${APP_USER}, then run docs/bare-metal/scripts/install-project.sh"
+log "PostgreSQL password: ${PG_PASSWORD_FILE}"
+log "Next (as ${APP_USER}): bash ${SCRIPT_DIR}/install-project.sh"
 if [ -r "$PG_PASSWORD_FILE" ]; then
-  log "PostgreSQL password stored in ${PG_PASSWORD_FILE}"
+  log "Secret file ready at ${PG_PASSWORD_FILE}"
 fi

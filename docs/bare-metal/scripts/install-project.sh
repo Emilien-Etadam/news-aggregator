@@ -74,19 +74,52 @@ require_non_git_directory() {
   fi
 }
 
+load_pg_password() {
+  local stored=""
+
+  if [ -n "${PG_PASSWORD:-}" ]; then
+    printf '%s' "$PG_PASSWORD"
+    return 0
+  fi
+
+  if [ -r "$PG_PASSWORD_FILE" ]; then
+    stored=$(tr -d '[:space:]' < "$PG_PASSWORD_FILE")
+    if [ -n "$stored" ]; then
+      printf '%s' "$stored"
+      return 0
+    fi
+  fi
+
+  return 1
+}
+
+require_pg_password() {
+  local hint
+
+  hint="Run as root: bash ${SCRIPT_DIR}/install-system.sh — or pass PG_PASSWORD=... in the environment."
+
+  if load_pg_password >/dev/null; then
+    return 0
+  fi
+
+  if [ -f "$PG_PASSWORD_FILE" ] && [ ! -r "$PG_PASSWORD_FILE" ]; then
+    err "PostgreSQL password file ${PG_PASSWORD_FILE} exists but is not readable (expected owner ${USER}). ${hint}"
+  fi
+
+  if [ -f "$PG_PASSWORD_FILE" ]; then
+    err "PostgreSQL password file ${PG_PASSWORD_FILE} is empty. Re-run install-system.sh to regenerate it. ${hint}"
+  fi
+
+  err "PostgreSQL password not found at ${PG_PASSWORD_FILE}. ${hint}"
+}
+
 append_env_local() {
   local app_secret mercure_secret pg_pass pg_pass_encoded mercure_url mercure_public
 
   app_secret=$(php -r 'echo bin2hex(random_bytes(32));')
   mercure_secret=$(openssl rand -hex 32)
 
-  if [ -r "$PG_PASSWORD_FILE" ]; then
-    pg_pass=$(<"$PG_PASSWORD_FILE")
-  elif [ -n "${PG_PASSWORD:-}" ]; then
-    pg_pass=$PG_PASSWORD
-  else
-    err "PostgreSQL password not found. Run install-system.sh or set PG_PASSWORD / PG_PASSWORD_FILE."
-  fi
+  pg_pass=$(load_pg_password) || require_pg_password
 
   pg_pass_encoded=$(urlencode "$pg_pass")
   mercure_url="${MERCURE_BASE_URL%/}/.well-known/mercure"
@@ -187,8 +220,10 @@ verify_post_install() {
 }
 
 [ "$EUID" -ne 0 ] || err "Do not run as root"
-command -v composer >/dev/null || err "composer missing (run install-system.sh)"
-command -v frankenphp >/dev/null || err "frankenphp missing (run install-system.sh)"
+command -v composer >/dev/null || err "composer missing (run install-system.sh as root: bash ${SCRIPT_DIR}/install-system.sh)"
+command -v frankenphp >/dev/null || err "frankenphp missing (run install-system.sh as root: bash ${SCRIPT_DIR}/install-system.sh)"
+
+require_pg_password
 
 export PATH="$HOME/.bun/bin:$PATH"
 
