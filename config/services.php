@@ -240,21 +240,23 @@ return static function (ContainerConfigurator $container): void {
     $container->parameters()->set('ai_openai_base_url_default', '');
     $container->parameters()->set('ai_openai_api_key_default', '');
     $container->parameters()->set('ai_openai_model_default', '');
+    $container->parameters()->set('openrouter_api_key_default', '');
+    $container->parameters()->set('notifier_dsn_default', 'null://null');
 
     $services->alias(SettingsServiceInterface::class, SettingsService::class);
 
     // Wire env vars for SettingsController
     $services->set(SettingsController::class)
-        ->arg('$openrouterApiKey', '%env(default::OPENROUTER_API_KEY)%')
-        ->arg('$notifierDsn', '%env(default::NOTIFIER_CHATTER_DSN)%');
+        ->arg('$openrouterApiKey', '%env(default:openrouter_api_key_default:OPENROUTER_API_KEY)%')
+        ->arg('$notifierDsn', '%env(default:notifier_dsn_default:NOTIFIER_CHATTER_DSN)%');
 
     // Wire notifier DSN for TestNotificationController (to detect null transport)
     $services->set(TestNotificationController::class)
-        ->arg('$notifierDsn', '%env(default::NOTIFIER_CHATTER_DSN)%');
+        ->arg('$notifierDsn', '%env(default:notifier_dsn_default:NOTIFIER_CHATTER_DSN)%');
 
     // Wire notifier DSN for NotificationDispatchService (to detect null transport)
     $services->set(NotificationDispatchService::class)
-        ->arg('$notifierDsn', '%env(default::NOTIFIER_CHATTER_DSN)%');
+        ->arg('$notifierDsn', '%env(default:notifier_dsn_default:NOTIFIER_CHATTER_DSN)%');
 
     // Mercure publisher: real implementation when Hub is available
     $services->alias(MercurePublisherServiceInterface::class, MercurePublisherService::class);
