@@ -16,6 +16,11 @@
                         hx-swap="innerHTML"
                         class="btn btn-secondary btn-sm">Fetch All</button>
             </span>
+            <button type="submit"
+                    form="sources-bulk-form"
+                    data-bulk-delete-btn
+                    disabled
+                    class="btn btn-error btn-sm">Delete selected</button>
             <a href="{{ path('app_sources_new') }}" class="btn btn-primary btn-sm">New Source</a>
         </div>
     </div>
@@ -35,13 +40,6 @@
               hx-headers='{"X-CSRF-Token": "{{ csrf_token('delete_sources_bulk') }}"}'
               hx-confirm="Delete selected sources and all of their articles?"
               hx-swap="none">
-            <div class="flex justify-end mb-3">
-                <button type="submit"
-                        data-bulk-delete-btn
-                        disabled
-                        class="btn btn-error btn-sm">Delete selected</button>
-            </div>
-
             <div class="overflow-x-auto">
                 <table class="table table-zebra">
                     <thead>
@@ -162,5 +160,64 @@
                 </table>
             </div>
         </form>
+    {% endif %}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% if sources is not empty %}
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const form = document.getElementById('sources-bulk-form');
+                const deleteBtn = document.querySelector('[data-bulk-delete-btn]');
+                if (!form || !deleteBtn) {
+                    return;
+                }
+
+                const rowChecks = () => Array.from(form.querySelectorAll('[data-source-select]'));
+                const selectAll = form.querySelector('[data-select-all-sources]');
+
+                const syncDeleteButton = () => {
+                    const checkedCount = rowChecks().filter((cb) => cb.checked).length;
+                    deleteBtn.disabled = checkedCount === 0;
+                    deleteBtn.textContent = checkedCount <= 1
+                        ? 'Delete selected'
+                        : `Delete selected (${checkedCount})`;
+                };
+
+                const syncSelectAll = () => {
+                    if (!selectAll) {
+                        return;
+                    }
+
+                    const checks = rowChecks();
+                    const checkedCount = checks.filter((cb) => cb.checked).length;
+                    selectAll.checked = checkedCount > 0 && checkedCount === checks.length;
+                    selectAll.indeterminate = checkedCount > 0 && checkedCount < checks.length;
+                };
+
+                form.addEventListener('change', (event) => {
+                    const target = event.target;
+                    if (!(target instanceof HTMLInputElement)) {
+                        return;
+                    }
+
+                    if (target.matches('[data-select-all-sources]')) {
+                        rowChecks().forEach((cb) => {
+                            cb.checked = target.checked;
+                        });
+                        syncDeleteButton();
+                        return;
+                    }
+
+                    if (target.matches('[data-source-select]')) {
+                        syncSelectAll();
+                        syncDeleteButton();
+                    }
+                });
+
+                syncDeleteButton();
+            });
+        </script>
     {% endif %}
 {% endblock %}

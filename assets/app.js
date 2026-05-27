@@ -16,5 +16,4 @@ import './js/mercure-updates.js';
 import './js/inline-reader.js';
 import './js/sidebar-collapse.js';
 import './js/source-filter.js';
-import './js/source-bulk-select.js';
 import './js/sentiment-slider.js';
