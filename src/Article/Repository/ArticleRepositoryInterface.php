@@ -56,6 +56,11 @@ interface ArticleRepositoryInterface
      */
     public function findWithoutTranslations(int $limit): array;
 
+    /**
+     * @return list<Article>
+     */
+    public function findWithoutImageUrl(int $limit, int $offset = 0): array;
+
     public function save(Article $article, bool $flush = false): void;
 
     public function flush(): void;

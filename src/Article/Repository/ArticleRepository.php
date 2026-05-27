@@ -218,6 +218,19 @@ final class ArticleRepository extends ServiceEntityRepository implements Article
             ->getResult();
     }
 
+    public function findWithoutImageUrl(int $limit, int $offset = 0): array
+    {
+        /** @var list<Article> */
+        return $this->createQueryBuilder('a')
+            ->where('a.imageUrl IS NULL')
+            ->andWhere('a.contentRaw IS NOT NULL')
+            ->orderBy('a.id', 'DESC')
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function save(Article $article, bool $flush = false): void
     {
         $this->getEntityManager()->persist($article);

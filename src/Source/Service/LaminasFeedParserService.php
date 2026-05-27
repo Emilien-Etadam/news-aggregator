@@ -29,8 +29,9 @@ final readonly class LaminasFeedParserService implements FeedParserServiceInterf
             }
 
             $contentRaw = $entry->getContent();
-            if ($contentRaw === '') {
-                $contentRaw = $entry->getDescription();
+            if ($contentRaw === null || $contentRaw === '') {
+                $description = $entry->getDescription();
+                $contentRaw = $description ?? '';
             }
 
             $contentText = $contentRaw !== '' ? $this->stripHtml($contentRaw) : null;
@@ -42,16 +43,32 @@ final readonly class LaminasFeedParserService implements FeedParserServiceInterf
                 $publishedAt = \DateTimeImmutable::createFromInterface($dateModified);
             }
 
+            $imageUrl = $this->extractFeedImageUrl($entry);
+
             $items[] = new FeedItem(
                 title: $title,
                 url: $url,
                 contentRaw: $contentRawOrNull,
                 contentText: $contentText,
                 publishedAt: $publishedAt,
+                imageUrl: $imageUrl,
             );
         }
 
         return new FeedItemCollection($items);
+    }
+
+    /**
+     * @param \Laminas\Feed\Reader\Entry\EntryInterface $entry
+     */
+    private function extractFeedImageUrl(object $entry): ?string
+    {
+        $enclosure = $entry->getEnclosure();
+        if ($enclosure !== null && isset($enclosure->url, $enclosure->type) && str_starts_with((string) $enclosure->type, 'image/')) {
+            return (string) $enclosure->url;
+        }
+
+        return null;
     }
 
     private function stripHtml(string $html): string

@@ -14,6 +14,7 @@ import './js/article-filter.js';
 import './js/language-selector.js';
 import './js/mercure-updates.js';
 import './js/inline-reader.js';
+import './js/reading-mode.js';
 import './js/sidebar-collapse.js';
 import './js/source-filter.js';
 import './js/sentiment-slider.js';

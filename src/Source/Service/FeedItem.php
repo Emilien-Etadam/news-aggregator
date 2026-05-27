@@ -12,6 +12,7 @@ final readonly class FeedItem
         public ?string $contentRaw,
         public ?string $contentText,
         public ?\DateTimeImmutable $publishedAt,
+        public ?string $imageUrl = null,
     ) {
     }
 }

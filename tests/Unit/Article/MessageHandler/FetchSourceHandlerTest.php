@@ -16,7 +16,7 @@ use App\Article\ValueObject\ArticleFingerprint;
 use App\Article\ValueObject\EnrichmentStatus;
 use App\Article\ValueObject\FetchResult;
 use App\Article\ValueObject\FullTextStatus;
-use App\Article\ValueObject\PersistItemResult;
+use App\Article\Service\ArticleImageExtractor;
 use App\Article\ValueObject\Url;
 use App\Enrichment\Service\RuleBasedEnrichmentServiceInterface;
 use App\Shared\Entity\Category;
@@ -524,6 +524,7 @@ final class FetchSourceHandlerTest extends TestCase
         ?FeedParserServiceInterface $parser = null,
         ?DeduplicationServiceInterface $dedup = null,
         ?RuleBasedEnrichmentServiceInterface $enrichment = null,
+        ?ArticleImageExtractor $imageExtractor = null,
         ?EventDispatcherInterface $eventDispatcher = null,
         ?MessageBusInterface $messageBus = null,
         ?LoggerInterface $logger = null,
@@ -558,6 +559,7 @@ final class FetchSourceHandlerTest extends TestCase
             $parser ?? $this->createStub(FeedParserServiceInterface::class),
             $dedup,
             $enrichment ?? $this->createStub(RuleBasedEnrichmentServiceInterface::class),
+            $imageExtractor ?? new ArticleImageExtractor(),
             $eventDispatcher ?? $this->createStub(EventDispatcherInterface::class),
             $messageBus,
             $this->clock,

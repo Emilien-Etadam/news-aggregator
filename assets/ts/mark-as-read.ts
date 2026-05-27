@@ -83,6 +83,20 @@ function observeArticleCards(): void {
 // Observe initial cards
 observeArticleCards();
 
+// Mark as read when opening the dedicated reader page
+const articleShowRoot = document.querySelector<HTMLElement>("[data-article-show-id]");
+if (articleShowRoot) {
+    const articleId = articleShowRoot.dataset.articleShowId;
+    if (articleId) {
+        void fetch(`/articles/${articleId}/read`, {
+            method: "POST",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+            },
+        });
+    }
+}
+
 // Re-observe when htmx or Mercure adds new cards to the feed
 const feed = document.querySelector<HTMLElement>('#article-feed');
 if (feed) {

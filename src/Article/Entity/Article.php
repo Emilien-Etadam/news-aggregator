@@ -32,6 +32,9 @@ class Article
     #[ORM\Column(length: 2048, unique: true)]
     private string $url;
 
+    #[ORM\Column(length: 2048, nullable: true)]
+    private ?string $imageUrl = null;
+
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $contentRaw = null;
 
@@ -131,6 +134,16 @@ class Article
     public function getUrl(): string
     {
         return $this->url;
+    }
+
+    public function getImageUrl(): ?string
+    {
+        return $this->imageUrl;
+    }
+
+    public function setImageUrl(?string $imageUrl): void
+    {
+        $this->imageUrl = $imageUrl;
     }
 
     public function getContentRaw(): ?string

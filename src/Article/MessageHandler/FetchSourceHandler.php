@@ -15,6 +15,7 @@ use App\Article\ValueObject\ArticleFingerprint;
 use App\Article\ValueObject\EnrichmentStatus;
 use App\Article\ValueObject\FetchResult;
 use App\Article\ValueObject\FullTextStatus;
+use App\Article\Service\ArticleImageExtractor;
 use App\Article\ValueObject\PersistItemResult;
 use App\Article\ValueObject\Url;
 use App\Enrichment\Service\RuleBasedEnrichmentServiceInterface;
@@ -43,6 +44,7 @@ final readonly class FetchSourceHandler
         private FeedParserServiceInterface $feedParser,
         private DeduplicationServiceInterface $deduplication,
         private RuleBasedEnrichmentServiceInterface $enrichment,
+        private ArticleImageExtractor $imageExtractor,
         private EventDispatcherInterface $eventDispatcher,
         private MessageBusInterface $messageBus,
         private ClockInterface $clock,
@@ -131,6 +133,7 @@ final readonly class FetchSourceHandler
             $article->setContentText($item->contentText);
             $article->setPublishedAt($item->publishedAt);
             $article->setFingerprint($fingerprint);
+            $article->setImageUrl($this->imageExtractor->extract($item->imageUrl, $item->contentRaw, $sanitizedUrl));
 
             $this->enrichment->enrich($article, $item, $source);
             $article->setEnrichmentStatus(EnrichmentStatus::Pending);

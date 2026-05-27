@@ -182,4 +182,27 @@ XML;
         self::assertSame(trim($contentText), $contentText, 'Content text should not have leading/trailing whitespace');
         self::assertSame('Trimmed content', $contentText);
     }
+
+    public function testExtractsImageEnclosureUrl(): void
+    {
+        $xml = <<<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Test</title>
+    <link>https://example.com</link>
+    <item>
+      <title>Image Article</title>
+      <link>https://example.com/image-article</link>
+      <enclosure url="https://example.com/thumb.jpg" type="image/jpeg" length="1234"/>
+    </item>
+  </channel>
+</rss>
+XML;
+
+        $items = $this->parser->parse($xml)->toArray();
+
+        self::assertCount(1, $items);
+        self::assertSame('https://example.com/thumb.jpg', $items[0]->imageUrl);
+    }
 }

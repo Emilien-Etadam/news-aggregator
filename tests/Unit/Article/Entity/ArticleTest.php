@@ -32,6 +32,15 @@ final class ArticleTest extends TestCase
         self::assertNull($article->getEnrichmentMethod());
         self::assertNull($article->getAiModelUsed());
         self::assertNull($article->getPublishedAt());
+        self::assertNull($article->getImageUrl());
+    }
+
+    public function testSetImageUrl(): void
+    {
+        $article = $this->createArticle();
+        $article->setImageUrl('https://example.com/thumb.jpg');
+
+        self::assertSame('https://example.com/thumb.jpg', $article->getImageUrl());
     }
 
     public function testSetContent(): void

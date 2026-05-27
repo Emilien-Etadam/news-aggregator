@@ -1,0 +1,71 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ article.title|e }} — News Aggregator{% endblock %}
+
+{% block sidebar %}{% endblock %}
+
+{% block body %}
+<div class="max-w-3xl mx-auto py-4 lg:py-8" data-article-show-id="{{ article.id }}">
+    <div class="flex items-center justify-between gap-3 mb-6">
+        <a href="{{ backUrl }}" class="btn btn-ghost btn-sm gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to feed
+        </a>
+        {% include 'components/_bookmark_button.html.twig' with { article: article, isBookmarked: isBookmarked } %}
+    </div>
+
+    <header class="text-center mb-8">
+        <div class="flex flex-wrap items-center justify-center gap-2 mb-4 text-sm text-base-content/60">
+            <span class="badge badge-outline badge-sm">{{ article.source.name }}</span>
+            {% if article.category %}
+                <span class="badge badge-sm" style="background-color: {{ article.category.color }}; color: {{ article.category.color|contrast_text_color }};">{{ article.category.name }}</span>
+            {% endif %}
+            <time datetime="{{ article.publishedAt ? article.publishedAt|date('c') : article.fetchedAt|date('c') }}" class="timeago">
+                {{ article.publishedAt ? article.publishedAt|date('Y-m-d H:i') : article.fetchedAt|date('Y-m-d H:i') }}
+            </time>
+            {% set reading_minutes = (article.contentFullText ?? article.contentFullHtml ?? article.contentText)|reading_time %}
+            {% if reading_minutes %}
+                <span>{{ reading_minutes }} min read</span>
+            {% endif %}
+        </div>
+        <h1 class="text-3xl lg:text-4xl font-serif font-bold leading-tight text-base-content" data-lang-title>
+            {{ article.title }}
+        </h1>
+        {% if article.summary %}
+            <p class="mt-4 text-lg text-base-content/70 leading-relaxed" data-lang-summary>{{ article.summary }}</p>
+        {% endif %}
+    </header>
+
+    <article class="reader-content bg-base-100 rounded-xl shadow-sm px-6 py-8 lg:px-10 lg:py-10">
+        {% if article.contentFullHtml %}
+            <div class="prose prose-lg max-w-none prose-img:rounded-lg prose-headings:font-serif">
+                {{ article.contentFullHtml|raw }}
+            </div>
+        {% elseif article.contentFullText %}
+            <div class="prose prose-lg max-w-none whitespace-pre-wrap font-serif leading-relaxed text-base-content/90">
+                {{ article.contentFullText }}
+            </div>
+        {% elseif article.contentRaw %}
+            <div class="prose prose-lg max-w-none">
+                {{ article.contentRaw|striptags('<p><br><ul><ol><li><strong><em><a><img><h1><h2><h3><blockquote>')|raw }}
+            </div>
+        {% else %}
+            <p class="text-base-content/60 italic text-center py-8">
+                Full content is not available yet.
+                {% if article.fullTextStatus and article.fullTextStatus.value == 'pending' %}
+                    Content is being fetched…
+                {% endif %}
+            </p>
+        {% endif %}
+    </article>
+
+    <footer class="mt-8 pt-6 border-t border-base-300 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <p class="text-sm text-base-content/50">Read on News Aggregator</p>
+        <a href="{{ article.url }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">
+            Open original →
+        </a>
+    </footer>
+</div>
+{% endblock %}
