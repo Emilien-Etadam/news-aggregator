@@ -59,12 +59,3 @@ document.body.addEventListener("htmx:afterSwap", (event) => {
     applyReadingMode(getReadingMode());
   }
 });
-document.querySelectorAll("[data-reading-mode-option]").forEach((el) => {
-  el.addEventListener("click", () => {
-    const mode = el.dataset.readingModeOption;
-    if (mode === "page" || mode === "inline") {
-      setReadingMode(mode);
-      document.activeElement?.blur();
-    }
-  });
-});

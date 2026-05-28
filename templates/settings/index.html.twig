@@ -271,8 +271,10 @@
                 </div>
                 <script>
                     (function () {
+                        var READING_MODE_KEY = 'reading-mode';
+
                         function syncReadingModeControls() {
-                            var mode = localStorage.getItem('reading-mode') === 'inline' ? 'inline' : 'page';
+                            var mode = localStorage.getItem(READING_MODE_KEY) === 'inline' ? 'inline' : 'page';
                             document.querySelectorAll('[data-reading-mode-option]').forEach(function (btn) {
                                 var active = btn.getAttribute('data-reading-mode-option') === mode;
                                 btn.classList.toggle('settings-option-selected', active);
@@ -288,15 +290,24 @@
                             });
                         }
 
-                        function syncSettingsSelections() {
-                            syncReadingModeControls();
-                            syncThemeSwatches();
-                        }
+                        syncReadingModeControls();
+                        syncThemeSwatches();
 
-                        syncSettingsSelections();
-                        document.querySelectorAll('[data-reading-mode-option], [data-theme-swatch]').forEach(function (btn) {
+                        document.querySelectorAll('[data-reading-mode-option]').forEach(function (btn) {
                             btn.addEventListener('click', function () {
-                                window.setTimeout(syncSettingsSelections, 0);
+                                var mode = btn.getAttribute('data-reading-mode-option');
+                                if (mode !== 'page' && mode !== 'inline') {
+                                    return;
+                                }
+                                localStorage.setItem(READING_MODE_KEY, mode);
+                                syncReadingModeControls();
+                                btn.blur();
+                            });
+                        });
+
+                        document.querySelectorAll('[data-theme-swatch]').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                window.setTimeout(syncThemeSwatches, 0);
                             });
                         });
                     })();
