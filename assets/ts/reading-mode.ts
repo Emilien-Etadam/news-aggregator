@@ -20,14 +20,14 @@ function applyReadingMode(mode) {
     }
   }
 }
+const READING_MODE_ACTIVE_CLASS = "reading-mode-option-active";
+
 function updateReadingModeControls(mode) {
   document.querySelectorAll("[data-reading-mode-option]").forEach((el) => {
     const option = el.dataset.readingModeOption;
-    if (option === mode) {
-      el.classList.add("ring-2", "ring-primary", "ring-offset-2", "ring-offset-base-100");
-    } else {
-      el.classList.remove("ring-2", "ring-primary", "ring-offset-2", "ring-offset-base-100");
-    }
+    const isActive = option === mode;
+    el.classList.toggle(READING_MODE_ACTIVE_CLASS, isActive);
+    el.setAttribute("aria-pressed", isActive ? "true" : "false");
   });
 }
 function handleArticleNavigationClick(event) {

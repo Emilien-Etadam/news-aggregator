@@ -220,12 +220,12 @@
                 <h3 class="card-title text-base">Reading Mode</h3>
                 <p class="text-sm text-base-content/50">Saved in your browser. Changes apply immediately.</p>
                 <p class="text-sm text-base-content/50 mt-1">Dedicated page is recommended for comfortable reading.</p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                    <button type="button" data-reading-mode-option="page" class="btn btn-sm h-auto py-3 flex flex-col items-start gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all text-left">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3" role="group" aria-label="Reading mode">
+                    <button type="button" data-reading-mode-option="page" aria-pressed="false" class="btn btn-sm h-auto py-3 flex flex-col items-start gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all text-left">
                         <span class="font-semibold">Dedicated page</span>
                         <span class="text-xs text-base-content/60">Open articles on a clean reader page</span>
                     </button>
-                    <button type="button" data-reading-mode-option="inline" class="btn btn-sm h-auto py-3 flex flex-col items-start gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all text-left">
+                    <button type="button" data-reading-mode-option="inline" aria-pressed="false" class="btn btn-sm h-auto py-3 flex flex-col items-start gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all text-left">
                         <span class="font-semibold">In feed</span>
                         <span class="text-xs text-base-content/60">Expand articles inside the dashboard list</span>
                     </button>
