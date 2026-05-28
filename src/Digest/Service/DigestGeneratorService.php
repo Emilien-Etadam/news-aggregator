@@ -9,19 +9,19 @@ use App\Article\Repository\ArticleRepositoryInterface;
 use App\Article\ValueObject\ArticleCollection;
 use App\Digest\Entity\DigestConfig;
 use App\Digest\ValueObject\GroupedArticles;
-use App\Shared\Service\SettingsServiceInterface;
+use App\User\Service\UserPreferenceServiceInterface;
 
 final readonly class DigestGeneratorService implements DigestGeneratorServiceInterface
 {
     public function __construct(
         private ArticleRepositoryInterface $articleRepository,
-        private SettingsServiceInterface $settingsService,
+        private UserPreferenceServiceInterface $userPreferenceService,
     ) {
     }
 
     public function collectArticles(DigestConfig $config): GroupedArticles
     {
-        $sentimentSlider = $this->settingsService->getSentimentSlider();
+        $sentimentSlider = $this->userPreferenceService->getSentimentSlider($config->getUser());
 
         /** @var list<Article> $articles */
         $articles = $this->articleRepository->findForDigest(

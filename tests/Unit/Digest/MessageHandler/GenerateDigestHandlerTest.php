@@ -16,6 +16,7 @@ use App\Digest\Service\DigestGeneratorServiceInterface;
 use App\Digest\Service\DigestSummaryServiceInterface;
 use App\Digest\ValueObject\GroupedArticles;
 use App\User\Entity\User;
+use App\User\Service\UserPreferenceServiceInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -39,6 +40,8 @@ final class GenerateDigestHandlerTest extends TestCase
 
     private MockObject&DigestSummaryServiceInterface $summary;
 
+    private MockObject&UserPreferenceServiceInterface $userPreferenceService;
+
     private MockObject&NotifierInterface $notifier;
 
     private MockObject&LoggerInterface $logger;
@@ -53,6 +56,7 @@ final class GenerateDigestHandlerTest extends TestCase
         $this->logRepository = $this->createMock(DigestLogRepositoryInterface::class);
         $this->generator = $this->createMock(DigestGeneratorServiceInterface::class);
         $this->summary = $this->createMock(DigestSummaryServiceInterface::class);
+        $this->userPreferenceService = $this->createMock(UserPreferenceServiceInterface::class);
         $this->notifier = $this->createMock(NotifierInterface::class);
         $this->logger = $this->createMock(LoggerInterface::class);
         $this->clock = new MockClock();
@@ -62,6 +66,7 @@ final class GenerateDigestHandlerTest extends TestCase
             $this->logRepository,
             $this->generator,
             $this->summary,
+            $this->userPreferenceService,
             $this->notifier,
             $this->clock,
             $this->logger,
@@ -85,6 +90,7 @@ final class GenerateDigestHandlerTest extends TestCase
 
         $this->configRepository->method('findById')->willReturn($config);
         $this->generator->method('collectArticles')->willReturn($grouped);
+        $this->userPreferenceService->method('getSentimentSlider')->willReturn(0);
         $this->summary->method('generate')->willReturn('Summary content');
 
         $this->notifier->expects(self::once())->method('send')

@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Shared\Controller;
 
 use App\Shared\Controller\SentimentApiController;
-use App\Shared\Service\SettingsService;
-use App\Shared\Service\SettingsServiceInterface;
+use App\User\Entity\User;
+use App\User\Service\UserPreferenceServiceInterface;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\TestCase;
+use Symfony\Bundle\FrameworkBundle\Controller\ControllerHelper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -17,12 +18,16 @@ final class SentimentApiControllerTest extends TestCase
 {
     public function testValidValuePersistsAndReturnsJson(): void
     {
-        $settings = $this->createMock(SettingsServiceInterface::class);
-        $settings->expects(self::once())
-            ->method('set')
-            ->with(SettingsService::KEY_SENTIMENT_SLIDER, '5');
+        $user = new User('demo@localhost', 'hash');
+        $helper = $this->createMock(ControllerHelper::class);
+        $helper->method('getUser')->willReturn($user);
 
-        $controller = new SentimentApiController($settings);
+        $preferences = $this->createMock(UserPreferenceServiceInterface::class);
+        $preferences->expects(self::once())
+            ->method('set')
+            ->with($user, UserPreferenceServiceInterface::KEY_SENTIMENT_SLIDER, '5');
+
+        $controller = new SentimentApiController($helper, $preferences);
         $request = Request::create('/api/settings/sentiment', 'POST', [
             'value' => '5',
         ]);
@@ -35,12 +40,16 @@ final class SentimentApiControllerTest extends TestCase
 
     public function testZeroValueAccepted(): void
     {
-        $settings = $this->createMock(SettingsServiceInterface::class);
-        $settings->expects(self::once())
-            ->method('set')
-            ->with(SettingsService::KEY_SENTIMENT_SLIDER, '0');
+        $user = new User('demo@localhost', 'hash');
+        $helper = $this->createMock(ControllerHelper::class);
+        $helper->method('getUser')->willReturn($user);
 
-        $controller = new SentimentApiController($settings);
+        $preferences = $this->createMock(UserPreferenceServiceInterface::class);
+        $preferences->expects(self::once())
+            ->method('set')
+            ->with($user, UserPreferenceServiceInterface::KEY_SENTIMENT_SLIDER, '0');
+
+        $controller = new SentimentApiController($helper, $preferences);
         $request = Request::create('/api/settings/sentiment', 'POST', [
             'value' => '0',
         ]);
@@ -52,12 +61,16 @@ final class SentimentApiControllerTest extends TestCase
 
     public function testNegativeValueAccepted(): void
     {
-        $settings = $this->createMock(SettingsServiceInterface::class);
-        $settings->expects(self::once())
-            ->method('set')
-            ->with(SettingsService::KEY_SENTIMENT_SLIDER, '-7');
+        $user = new User('demo@localhost', 'hash');
+        $helper = $this->createMock(ControllerHelper::class);
+        $helper->method('getUser')->willReturn($user);
 
-        $controller = new SentimentApiController($settings);
+        $preferences = $this->createMock(UserPreferenceServiceInterface::class);
+        $preferences->expects(self::once())
+            ->method('set')
+            ->with($user, UserPreferenceServiceInterface::KEY_SENTIMENT_SLIDER, '-7');
+
+        $controller = new SentimentApiController($helper, $preferences);
         $request = Request::create('/api/settings/sentiment', 'POST', [
             'value' => '-7',
         ]);
@@ -69,10 +82,13 @@ final class SentimentApiControllerTest extends TestCase
 
     public function testValueTooHighReturnsBadRequest(): void
     {
-        $settings = $this->createMock(SettingsServiceInterface::class);
-        $settings->expects(self::never())->method('set');
+        $helper = $this->createMock(ControllerHelper::class);
+        $helper->method('getUser')->willReturn(new User('demo@localhost', 'hash'));
 
-        $controller = new SentimentApiController($settings);
+        $preferences = $this->createMock(UserPreferenceServiceInterface::class);
+        $preferences->expects(self::never())->method('set');
+
+        $controller = new SentimentApiController($helper, $preferences);
         $request = Request::create('/api/settings/sentiment', 'POST', [
             'value' => '11',
         ]);
@@ -84,10 +100,13 @@ final class SentimentApiControllerTest extends TestCase
 
     public function testValueTooLowReturnsBadRequest(): void
     {
-        $settings = $this->createMock(SettingsServiceInterface::class);
-        $settings->expects(self::never())->method('set');
+        $helper = $this->createMock(ControllerHelper::class);
+        $helper->method('getUser')->willReturn(new User('demo@localhost', 'hash'));
 
-        $controller = new SentimentApiController($settings);
+        $preferences = $this->createMock(UserPreferenceServiceInterface::class);
+        $preferences->expects(self::never())->method('set');
+
+        $controller = new SentimentApiController($helper, $preferences);
         $request = Request::create('/api/settings/sentiment', 'POST', [
             'value' => '-11',
         ]);
@@ -99,10 +118,14 @@ final class SentimentApiControllerTest extends TestCase
 
     public function testBoundaryMinus10Accepted(): void
     {
-        $settings = $this->createMock(SettingsServiceInterface::class);
-        $settings->expects(self::once())->method('set');
+        $user = new User('demo@localhost', 'hash');
+        $helper = $this->createMock(ControllerHelper::class);
+        $helper->method('getUser')->willReturn($user);
 
-        $controller = new SentimentApiController($settings);
+        $preferences = $this->createMock(UserPreferenceServiceInterface::class);
+        $preferences->expects(self::once())->method('set');
+
+        $controller = new SentimentApiController($helper, $preferences);
         $request = Request::create('/api/settings/sentiment', 'POST', [
             'value' => '-10',
         ]);
@@ -114,10 +137,14 @@ final class SentimentApiControllerTest extends TestCase
 
     public function testBoundaryPlus10Accepted(): void
     {
-        $settings = $this->createMock(SettingsServiceInterface::class);
-        $settings->expects(self::once())->method('set');
+        $user = new User('demo@localhost', 'hash');
+        $helper = $this->createMock(ControllerHelper::class);
+        $helper->method('getUser')->willReturn($user);
 
-        $controller = new SentimentApiController($settings);
+        $preferences = $this->createMock(UserPreferenceServiceInterface::class);
+        $preferences->expects(self::once())->method('set');
+
+        $controller = new SentimentApiController($helper, $preferences);
         $request = Request::create('/api/settings/sentiment', 'POST', [
             'value' => '10',
         ]);

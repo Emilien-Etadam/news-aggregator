@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="night">
+<html lang="en" data-theme="{{ nav.userPrefs.theme|default('night') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,8 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     {% block stylesheets %}{% endblock %}
     <script>
-        const savedTheme = localStorage.getItem('theme') || 'night';
-        document.documentElement.setAttribute('data-theme', savedTheme);
+        document.documentElement.setAttribute('data-theme', '{{ nav.userPrefs.theme|default('night')|e('js') }}');
     </script>
     <style>
         .sidebar-expanded { width: 16rem; }
@@ -41,13 +40,19 @@
     </style>
     <script>
         try {
-            if (localStorage.getItem('sidebar-collapsed') === 'true') {
+            if ({{ nav.userPrefs.sidebarCollapsed|default(false) ? 'true' : 'false' }}) {
                 document.documentElement.classList.add('sidebar-start-collapsed');
             }
         } catch (e) {}
     </script>
 </head>
-<body class="min-h-screen bg-base-200">
+<body class="min-h-screen bg-base-200"
+      data-preferences-url="{{ path('api_user_preferences') }}"
+      data-preferences-csrf="{{ csrf_token('user_preference') }}"
+      data-reading-mode="{{ nav.userPrefs.readingMode|default('page') }}"
+      data-theme-preference="{{ nav.userPrefs.theme|default('night') }}"
+      data-sidebar-collapsed="{{ nav.userPrefs.sidebarCollapsed|default(false) ? 'true' : 'false' }}"
+      data-display-language="{{ nav.userPrefs.displayLanguage|default('en') }}">
     {% include 'components/_flash_messages.html.twig' %}
 
     <div class="navbar bg-base-100 shadow-lg sticky top-0 z-50">

@@ -8,5 +8,5 @@ use App\Digest\ValueObject\GroupedArticles;
 
 interface DigestSummaryServiceInterface
 {
-    public function generate(GroupedArticles $groupedArticles): string;
+    public function generate(GroupedArticles $groupedArticles, int $sentimentSlider = 0): string;
 }

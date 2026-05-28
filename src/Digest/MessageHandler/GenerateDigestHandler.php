@@ -12,6 +12,7 @@ use App\Digest\Repository\DigestLogRepositoryInterface;
 use App\Digest\Service\DigestGeneratorServiceInterface;
 use App\Digest\Service\DigestSummaryServiceInterface;
 use App\Digest\ValueObject\GroupedArticles;
+use App\User\Service\UserPreferenceServiceInterface;
 use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -26,6 +27,7 @@ final readonly class GenerateDigestHandler
         private DigestLogRepositoryInterface $digestLogRepository,
         private DigestGeneratorServiceInterface $generator,
         private DigestSummaryServiceInterface $summary,
+        private UserPreferenceServiceInterface $userPreferenceService,
         private NotifierInterface $notifier,
         private ClockInterface $clock,
         private LoggerInterface $logger,
@@ -54,7 +56,8 @@ final readonly class GenerateDigestHandler
         }
 
         $articleTitles = $this->extractArticleTitles($groupedArticles);
-        $content = $this->summary->generate($groupedArticles);
+        $sentimentSlider = $this->userPreferenceService->getSentimentSlider($config->getUser());
+        $content = $this->summary->generate($groupedArticles, $sentimentSlider);
 
         $success = $this->sendNotification($config, $totalArticles, $content, $message->digestConfigId);
 

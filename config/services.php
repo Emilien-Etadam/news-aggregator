@@ -57,6 +57,8 @@ use App\Shared\Search\Service\SealArticleSearchService;
 use App\Shared\Service\QueueDepthServiceInterface;
 use App\Shared\Service\SettingsService;
 use App\Shared\Service\SettingsServiceInterface;
+use App\User\Service\UserPreferenceService;
+use App\User\Service\UserPreferenceServiceInterface;
 use App\Source\Command\SeedDataCommand;
 use Symfony\AI\Agent\Toolbox\Toolbox;
 use Symfony\AI\Platform\Bridge\Generic\CompletionsModel;
@@ -244,6 +246,8 @@ return static function (ContainerConfigurator $container): void {
     $container->parameters()->set('notifier_dsn_default', 'null://null');
 
     $services->alias(SettingsServiceInterface::class, SettingsService::class);
+
+    $services->alias(UserPreferenceServiceInterface::class, UserPreferenceService::class);
 
     // Wire env vars for SettingsController
     $services->set(SettingsController::class)

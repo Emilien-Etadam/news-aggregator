@@ -218,14 +218,14 @@
         <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
                 <h3 class="card-title text-base">Reading Mode</h3>
-                <p class="text-sm text-base-content/50">Saved in your browser. Changes apply immediately.</p>
+                <p class="text-sm text-base-content/50">Saved to your account. Same on every browser when signed in.</p>
                 <p class="text-sm text-base-content/50 mt-1">Dedicated page is recommended for comfortable reading.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3" role="group" aria-label="Reading mode">
-                    <button type="button" data-reading-mode-option="page" aria-pressed="false" class="btn btn-sm h-auto py-3 flex flex-col items-start gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all text-left">
+                    <button type="button" data-reading-mode-option="page" aria-pressed="{{ nav.userPrefs.readingMode == 'page' ? 'true' : 'false' }}" class="btn btn-sm h-auto py-3 flex flex-col items-start gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all text-left{{ nav.userPrefs.readingMode == 'page' ? ' settings-option-selected' : '' }}">
                         <span class="font-semibold">Dedicated page</span>
                         <span class="text-xs text-base-content/60">Open articles on a clean reader page</span>
                     </button>
-                    <button type="button" data-reading-mode-option="inline" aria-pressed="false" class="btn btn-sm h-auto py-3 flex flex-col items-start gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all text-left">
+                    <button type="button" data-reading-mode-option="inline" aria-pressed="{{ nav.userPrefs.readingMode == 'inline' ? 'true' : 'false' }}" class="btn btn-sm h-auto py-3 flex flex-col items-start gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all text-left{{ nav.userPrefs.readingMode == 'inline' ? ' settings-option-selected' : '' }}">
                         <span class="font-semibold">In feed</span>
                         <span class="text-xs text-base-content/60">Expand articles inside the dashboard list</span>
                     </button>
@@ -236,82 +236,39 @@
         <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
                 <h3 class="card-title text-base">Color Scheme</h3>
-                <p class="text-sm text-base-content/50">Saved in your browser. Changes apply immediately.</p>
+                <p class="text-sm text-base-content/50">Saved to your account. Same on every browser when signed in.</p>
                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
-                    <button data-theme-swatch="night" class="btn btn-sm h-auto py-3 flex flex-col gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all">
+                    <button data-theme-swatch="night" class="btn btn-sm h-auto py-3 flex flex-col gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all{{ nav.userPrefs.theme == 'night' ? ' settings-option-selected' : '' }}">
                         <span data-theme="night" class="w-full rounded px-2 py-1 bg-base-100 text-base-content text-xs text-left">
                             <span class="font-semibold">Aa</span> Dark Blue
                         </span>
                     </button>
-                    <button data-theme-swatch="dracula" class="btn btn-sm h-auto py-3 flex flex-col gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all">
+                    <button data-theme-swatch="dracula" class="btn btn-sm h-auto py-3 flex flex-col gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all{{ nav.userPrefs.theme == 'dracula' ? ' settings-option-selected' : '' }}">
                         <span data-theme="dracula" class="w-full rounded px-2 py-1 bg-base-100 text-base-content text-xs text-left">
                             <span class="font-semibold">Aa</span> Dark Purple
                         </span>
                     </button>
-                    <button data-theme-swatch="forest" class="btn btn-sm h-auto py-3 flex flex-col gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all">
+                    <button data-theme-swatch="forest" class="btn btn-sm h-auto py-3 flex flex-col gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all{{ nav.userPrefs.theme == 'forest' ? ' settings-option-selected' : '' }}">
                         <span data-theme="forest" class="w-full rounded px-2 py-1 bg-base-100 text-base-content text-xs text-left">
                             <span class="font-semibold">Aa</span> Dark Emerald
                         </span>
                     </button>
-                    <button data-theme-swatch="winter" class="btn btn-sm h-auto py-3 flex flex-col gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all">
+                    <button data-theme-swatch="winter" class="btn btn-sm h-auto py-3 flex flex-col gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all{{ nav.userPrefs.theme == 'winter' ? ' settings-option-selected' : '' }}">
                         <span data-theme="winter" class="w-full rounded px-2 py-1 bg-base-100 text-base-content text-xs text-left">
                             <span class="font-semibold">Aa</span> Light Blue
                         </span>
                     </button>
-                    <button data-theme-swatch="lemonade" class="btn btn-sm h-auto py-3 flex flex-col gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all">
+                    <button data-theme-swatch="lemonade" class="btn btn-sm h-auto py-3 flex flex-col gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all{{ nav.userPrefs.theme == 'lemonade' ? ' settings-option-selected' : '' }}">
                         <span data-theme="lemonade" class="w-full rounded px-2 py-1 bg-base-100 text-base-content text-xs text-left">
                             <span class="font-semibold">Aa</span> Light Warm
                         </span>
                     </button>
-                    <button data-theme-swatch="valentine" class="btn btn-sm h-auto py-3 flex flex-col gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all">
+                    <button data-theme-swatch="valentine" class="btn btn-sm h-auto py-3 flex flex-col gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all{{ nav.userPrefs.theme == 'valentine' ? ' settings-option-selected' : '' }}">
                         <span data-theme="valentine" class="w-full rounded px-2 py-1 bg-base-100 text-base-content text-xs text-left">
                             <span class="font-semibold">Aa</span> Light Rose
                         </span>
                     </button>
                 </div>
-                <script>
-                    (function () {
-                        var READING_MODE_KEY = 'reading-mode';
-
-                        function syncReadingModeControls() {
-                            var mode = localStorage.getItem(READING_MODE_KEY) === 'inline' ? 'inline' : 'page';
-                            document.querySelectorAll('[data-reading-mode-option]').forEach(function (btn) {
-                                var active = btn.getAttribute('data-reading-mode-option') === mode;
-                                btn.classList.toggle('settings-option-selected', active);
-                                btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-                            });
-                        }
-
-                        function syncThemeSwatches() {
-                            var theme = localStorage.getItem('theme') || 'night';
-                            document.querySelectorAll('[data-theme-swatch]').forEach(function (btn) {
-                                var active = btn.getAttribute('data-theme-swatch') === theme;
-                                btn.classList.toggle('settings-option-selected', active);
-                            });
-                        }
-
-                        syncReadingModeControls();
-                        syncThemeSwatches();
-
-                        document.querySelectorAll('[data-reading-mode-option]').forEach(function (btn) {
-                            btn.addEventListener('click', function () {
-                                var mode = btn.getAttribute('data-reading-mode-option');
-                                if (mode !== 'page' && mode !== 'inline') {
-                                    return;
-                                }
-                                localStorage.setItem(READING_MODE_KEY, mode);
-                                syncReadingModeControls();
-                                btn.blur();
-                            });
-                        });
-
-                        document.querySelectorAll('[data-theme-swatch]').forEach(function (btn) {
-                            btn.addEventListener('click', function () {
-                                window.setTimeout(syncThemeSwatches, 0);
-                            });
-                        });
-                    })();
-                </script>
             </div>
         </div>
 

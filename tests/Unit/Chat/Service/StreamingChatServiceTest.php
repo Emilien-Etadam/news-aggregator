@@ -12,6 +12,7 @@ use App\Chat\Tool\ArticleSearchToolInterface;
 use App\Shared\AI\Service\ModelQualityTrackerInterface;
 use App\Shared\AI\ValueObject\ModelQualityCategory;
 use App\Shared\Service\SettingsServiceInterface;
+use App\User\Service\UserPreferenceServiceInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -22,6 +23,7 @@ use Symfony\AI\Platform\Message\SystemMessage;
 use Symfony\AI\Platform\PlatformInterface;
 use Symfony\AI\Platform\Result\DeferredResult;
 use Symfony\AI\Platform\Result\InMemoryRawResult;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\AI\Platform\Result\StreamResult;
 use Symfony\AI\Platform\Result\TextResult;
 use Symfony\AI\Platform\ResultConverterInterface;
@@ -591,11 +593,17 @@ final class StreamingChatServiceTest extends TestCase
         ?ModelQualityTrackerInterface $tracker = null,
         ?LoggerInterface $logger = null,
         ?ChatStreamPublisherInterface $publisher = null,
-        ?SettingsServiceInterface $settingsOverride = null,
+        ?UserPreferenceServiceInterface $preferencesOverride = null,
+        ?Security $securityOverride = null,
     ): StreamingChatService {
-        if (! $settingsOverride instanceof SettingsServiceInterface) {
-            $settingsOverride = $this->createStub(SettingsServiceInterface::class);
-            $settingsOverride->method('getSentimentSlider')->willReturn(0);
+        if (! $preferencesOverride instanceof UserPreferenceServiceInterface) {
+            $preferencesOverride = $this->createStub(UserPreferenceServiceInterface::class);
+            $preferencesOverride->method('getSentimentSlider')->willReturn(0);
+        }
+
+        if (! $securityOverride instanceof Security) {
+            $securityOverride = $this->createStub(Security::class);
+            $securityOverride->method('getUser')->willReturn(null);
         }
 
         return new StreamingChatService(
@@ -606,7 +614,8 @@ final class StreamingChatServiceTest extends TestCase
             $tracker ?? $this->createStub(ModelQualityTrackerInterface::class),
             $logger ?? $this->createStub(LoggerInterface::class),
             $publisher ?? $this->createStub(ChatStreamPublisherInterface::class),
-            $settingsOverride,
+            $preferencesOverride,
+            $securityOverride,
         );
     }
 

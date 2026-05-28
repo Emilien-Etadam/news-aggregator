@@ -13,6 +13,7 @@ use App\Source\Repository\SourceRepositoryInterface;
 use App\User\Entity\User;
 use App\User\Repository\UserArticleBookmarkRepositoryInterface;
 use App\User\Repository\UserArticleReadRepositoryInterface;
+use App\User\Service\UserPreferenceServiceInterface;
 use Psr\Clock\ClockInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\ControllerHelper;
 use Symfony\Component\HttpFoundation\Request;
@@ -31,6 +32,7 @@ final class DashboardController
         private readonly CategoryRepositoryInterface $categoryRepository,
         private readonly NotificationLogRepositoryInterface $notificationLogRepository,
         private readonly SettingsServiceInterface $settingsService,
+        private readonly UserPreferenceServiceInterface $userPreferenceService,
         private readonly ClockInterface $clock,
     ) {
     }
@@ -54,7 +56,9 @@ final class DashboardController
 
         $user = $this->controller->getUser();
 
-        $sentimentSlider = $this->settingsService->getSentimentSlider();
+        $sentimentSlider = $user instanceof User
+            ? $this->userPreferenceService->getSentimentSlider($user)
+            : $this->settingsService->getSentimentSlider();
 
         $articles = $this->articleRepository->findPaginated(
             $category,

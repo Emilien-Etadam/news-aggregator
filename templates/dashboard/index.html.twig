@@ -38,20 +38,11 @@
     {% endif %}
 
     {# Sentiment filter notice — shown when slider != 0, dismissible #}
-    {% if nav.sentimentSlider != 0 %}
+    {% if nav.sentimentSlider != 0 and not nav.userPrefs.sentimentNoticeDismissed %}
         <div class="flex items-center gap-2 bg-warning/10 border border-warning/30 rounded-lg px-3 py-1.5 mb-4 text-sm text-warning-content" id="sentiment-notice" data-sentiment-value="{{ nav.sentimentSlider }}">
             <span>{{ nav.sentimentSlider > 0 ? '☀️' : '⚡' }} Sentiment {{ nav.sentimentSlider > 0 ? '+' : '' }}{{ nav.sentimentSlider }} — {% if nav.sentimentSlider|abs >= 6 %}filtering + ranking{% else %}re-ranking{% endif %}</span>
-            <button class="ml-auto text-base-content/50 hover:text-base-content" onclick="this.parentElement.classList.add('hidden'); localStorage.setItem('sentiment-notice-dismissed', '{{ nav.sentimentSlider }}')">✕</button>
+            <button type="button" class="ml-auto text-base-content/50 hover:text-base-content" data-dismiss-sentiment-notice data-sentiment-value="{{ nav.sentimentSlider }}">✕</button>
         </div>
-        <script>
-            (function() {
-                var dismissed = localStorage.getItem('sentiment-notice-dismissed');
-                var notice = document.getElementById('sentiment-notice');
-                if (notice && dismissed === notice.dataset.sentimentValue) {
-                    notice.classList.add('hidden');
-                }
-            })();
-        </script>
     {% endif %}
 
     {# Category tabs #}

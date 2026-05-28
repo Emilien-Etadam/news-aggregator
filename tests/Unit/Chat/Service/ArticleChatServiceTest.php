@@ -14,10 +14,13 @@ use App\Shared\AI\ValueObject\ModelId;
 use App\Shared\AI\ValueObject\ModelIdCollection;
 use App\Shared\AI\ValueObject\ModelQualityCategory;
 use App\Shared\Service\SettingsServiceInterface;
+use App\Shared\ValueObject\AiProvider;
+use App\User\Service\UserPreferenceServiceInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\AI\Agent\Toolbox\ToolboxInterface;
 use Symfony\AI\Platform\Message\AssistantMessage;
 use Symfony\AI\Platform\Message\MessageBag;
@@ -58,7 +61,7 @@ final class ArticleChatServiceTest extends TestCase
 
         $logger = $this->createMock(LoggerInterface::class);
 
-        $service = new ArticleChatService($store, $platform, $discovery, $toolbox, $tracker, $logger, $this->createSettingsStub());
+        $service = $this->buildService($store, $platform, $discovery, $toolbox, $tracker, $logger);
         $response = $service->chat('What happened today?', 'conv-1');
 
         self::assertSame('This is the answer.', $response->answer);
@@ -80,7 +83,7 @@ final class ArticleChatServiceTest extends TestCase
 
         $logger = $this->createStub(LoggerInterface::class);
 
-        $service = new ArticleChatService($store, $platform, $discovery, $toolbox, $tracker, $logger, $this->createSettingsStub());
+        $service = $this->buildService($store, $platform, $discovery, $toolbox, $tracker, $logger);
         $response = $service->chat('Tell me about AI', 'conv-2');
 
         self::assertSame([42, 99], $response->citedArticleIds);
@@ -98,7 +101,7 @@ final class ArticleChatServiceTest extends TestCase
         $toolbox = $this->createEmptyToolbox();
         $tracker = $this->createStub(ModelQualityTrackerInterface::class);
 
-        $service = new ArticleChatService($store, $platform, $discovery, $toolbox, $tracker, $this->createStub(LoggerInterface::class), $this->createSettingsStub());
+        $service = $this->buildService($store, $platform, $discovery, $toolbox, $tracker, $this->createStub(LoggerInterface::class));
         $response = $service->chat('query', 'conv-x');
 
         self::assertSame([7], $response->citedArticleIds);
@@ -122,7 +125,7 @@ final class ArticleChatServiceTest extends TestCase
         $logger->expects(self::once())->method('warning')
             ->with(self::stringContains('No tool-calling models'));
 
-        $service = new ArticleChatService($store, $platform, $discovery, $toolbox, $tracker, $logger, $this->createSettingsStub());
+        $service = $this->buildService($store, $platform, $discovery, $toolbox, $tracker, $logger);
         $response = $service->chat('Hello', 'conv-3');
 
         self::assertSame('Fallback answer.', $response->answer);
@@ -141,7 +144,7 @@ final class ArticleChatServiceTest extends TestCase
         $tracker = $this->createStub(ModelQualityTrackerInterface::class);
         $logger = $this->createStub(LoggerInterface::class);
 
-        $service = new ArticleChatService($store, $platform, $discovery, $toolbox, $tracker, $logger, $this->createSettingsStub());
+        $service = $this->buildService($store, $platform, $discovery, $toolbox, $tracker, $logger);
         $result = $service->getHistory('conv-5');
 
         self::assertSame($expectedBag, $result);
@@ -160,7 +163,7 @@ final class ArticleChatServiceTest extends TestCase
 
         $logger = $this->createStub(LoggerInterface::class);
 
-        $service = new ArticleChatService($store, $platform, $discovery, $toolbox, $tracker, $logger, $this->createSettingsStub());
+        $service = $this->buildService($store, $platform, $discovery, $toolbox, $tracker, $logger);
         $response = $service->chat('random question', 'conv-6');
 
         self::assertSame([], $response->citedArticleIds);
@@ -179,7 +182,7 @@ final class ArticleChatServiceTest extends TestCase
 
         $logger = $this->createStub(LoggerInterface::class);
 
-        $service = new ArticleChatService($store, $platform, $discovery, $toolbox, $tracker, $logger, $this->createSettingsStub());
+        $service = $this->buildService($store, $platform, $discovery, $toolbox, $tracker, $logger);
         $response = $service->chat('Hello', 'conv-7');
 
         self::assertSame('Multi-model answer.', $response->answer);
@@ -212,7 +215,7 @@ final class ArticleChatServiceTest extends TestCase
         $toolbox = $this->createEmptyToolbox();
         $tracker = $this->createStub(ModelQualityTrackerInterface::class);
 
-        $service = new ArticleChatService($store, $platform, $discovery, $toolbox, $tracker, $this->createStub(LoggerInterface::class), $this->createSettingsStub());
+        $service = $this->buildService($store, $platform, $discovery, $toolbox, $tracker, $this->createStub(LoggerInterface::class));
         $service->chat('User message', 'conv-save');
     }
 
@@ -250,7 +253,7 @@ final class ArticleChatServiceTest extends TestCase
         $toolbox = $this->createEmptyToolbox();
         $tracker = $this->createStub(ModelQualityTrackerInterface::class);
 
-        $service = new ArticleChatService($store, $platform, $discovery, $toolbox, $tracker, $this->createStub(LoggerInterface::class), $this->createSettingsStub());
+        $service = $this->buildService($store, $platform, $discovery, $toolbox, $tracker, $this->createStub(LoggerInterface::class));
         $response = $service->chat('My question', 'conv-msg');
 
         self::assertSame('Answer.', $response->answer);
@@ -267,7 +270,7 @@ final class ArticleChatServiceTest extends TestCase
         $toolbox = $this->createEmptyToolbox();
         $tracker = $this->createStub(ModelQualityTrackerInterface::class);
 
-        $service = new ArticleChatService($store, $platform, $discovery, $toolbox, $tracker, $this->createStub(LoggerInterface::class), $this->createSettingsStub());
+        $service = $this->buildService($store, $platform, $discovery, $toolbox, $tracker, $this->createStub(LoggerInterface::class));
         $response = $service->chat('question', 'conv-8');
 
         self::assertSame('', $response->answer);
@@ -296,7 +299,7 @@ final class ArticleChatServiceTest extends TestCase
                 self::callback(static fn (array $ctx): bool => $ctx['model'] === 'model-a' && $ctx['error'] === 'API down'),
             );
 
-        $service = new ArticleChatService($store, $platform, $discovery, $toolbox, $tracker, $logger, $this->createSettingsStub());
+        $service = $this->buildService($store, $platform, $discovery, $toolbox, $tracker, $logger);
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('API down');
@@ -351,7 +354,35 @@ final class ArticleChatServiceTest extends TestCase
     {
         $settings = $this->createStub(SettingsServiceInterface::class);
         $settings->method('getSentimentSlider')->willReturn(0);
+        $settings->method('getAiProvider')->willReturn(AiProvider::OpenRouter);
 
         return $settings;
+    }
+
+    private function buildService(
+        ConversationMessageStoreInterface $store,
+        PlatformInterface $platform,
+        ModelDiscoveryServiceInterface $discovery,
+        ToolboxInterface $toolbox,
+        ModelQualityTrackerInterface $tracker,
+        LoggerInterface $logger,
+    ): ArticleChatService {
+        $preferences = $this->createStub(UserPreferenceServiceInterface::class);
+        $preferences->method('getSentimentSlider')->willReturn(0);
+
+        $security = $this->createStub(Security::class);
+        $security->method('getUser')->willReturn(null);
+
+        return new ArticleChatService(
+            $store,
+            $platform,
+            $discovery,
+            $toolbox,
+            $tracker,
+            $logger,
+            $this->createSettingsStub(),
+            $preferences,
+            $security,
+        );
     }
 }

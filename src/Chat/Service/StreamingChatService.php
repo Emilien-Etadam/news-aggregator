@@ -11,8 +11,10 @@ use App\Chat\ValueObject\AnswerCollector;
 use App\Chat\ValueObject\StreamContext;
 use App\Shared\AI\Service\ModelQualityTrackerInterface;
 use App\Shared\AI\ValueObject\ModelQualityCategory;
-use App\Shared\Service\SettingsServiceInterface;
+use App\User\Entity\User;
+use App\User\Service\UserPreferenceServiceInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\AI\Platform\Message\Message;
 use Symfony\AI\Platform\Message\MessageBag;
 use Symfony\AI\Platform\PlatformInterface;
@@ -27,7 +29,8 @@ final readonly class StreamingChatService implements StreamingChatServiceInterfa
         private ModelQualityTrackerInterface $qualityTracker,
         private LoggerInterface $logger,
         private ChatStreamPublisherInterface $publisher,
-        private SettingsServiceInterface $settingsService,
+        private UserPreferenceServiceInterface $userPreferenceService,
+        private Security $security,
     ) {
     }
 
@@ -235,7 +238,7 @@ final readonly class StreamingChatService implements StreamingChatServiceInterfa
 
     private function getSentimentInstruction(): string
     {
-        $slider = $this->settingsService->getSentimentSlider();
+        $slider = $this->getSentimentSliderForCurrentUser();
 
         if ($slider > 3) {
             return "\n\nTone: Focus on hopeful developments, solutions, and positive progress. Highlight constructive outcomes.";
@@ -246,6 +249,17 @@ final readonly class StreamingChatService implements StreamingChatServiceInterfa
         }
 
         return '';
+    }
+
+    private function getSentimentSliderForCurrentUser(): int
+    {
+        $user = $this->security->getUser();
+
+        if ($user instanceof User) {
+            return $this->userPreferenceService->getSentimentSlider($user);
+        }
+
+        return 0;
     }
 
     /**
