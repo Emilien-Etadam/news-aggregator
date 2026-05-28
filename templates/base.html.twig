@@ -25,15 +25,12 @@
         /* Tooltips only visible in collapsed state */
         .sidebar-expanded .tooltip::before,
         .sidebar-expanded .tooltip::after { display: none !important; }
-        /* Settings: reading mode selection */
-        [data-reading-mode-option].reading-mode-option-active {
-            --tw-border-opacity: 1;
+        /* Settings: selected option (reading mode, color scheme) */
+        [data-reading-mode-option].settings-option-selected,
+        [data-theme-swatch].settings-option-selected {
             border-color: oklch(var(--p)) !important;
-            color: oklch(var(--pc)) !important;
-            background-color: oklch(var(--p)) !important;
-        }
-        [data-reading-mode-option].reading-mode-option-active .reading-mode-option-hint {
-            color: oklch(var(--pc) / 0.75) !important;
+            outline: 2px solid oklch(var(--p));
+            outline-offset: 2px;
         }
         /* Sentiment slider gradient track */
         #sentiment-slider, .sentiment-slider-mobile {

@@ -29,11 +29,7 @@ function setTheme(theme: string): void {
 function updateActiveStates(theme: string): void {
     document.querySelectorAll('[data-theme-swatch]').forEach((el) => {
         const swatchTheme = (el as HTMLElement).dataset.themeSwatch;
-        if (swatchTheme === theme) {
-            el.classList.add('ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-base-100');
-        } else {
-            el.classList.remove('ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-base-100');
-        }
+        el.classList.toggle('settings-option-selected', swatchTheme === theme);
     });
 
     const currentLabel = document.getElementById('theme-current-label');

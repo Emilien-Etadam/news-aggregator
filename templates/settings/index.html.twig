@@ -221,36 +221,15 @@
                 <p class="text-sm text-base-content/50">Saved in your browser. Changes apply immediately.</p>
                 <p class="text-sm text-base-content/50 mt-1">Dedicated page is recommended for comfortable reading.</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3" role="group" aria-label="Reading mode">
-                    <button type="button" data-reading-mode-option="page" aria-pressed="false" class="btn btn-sm btn-outline h-auto py-3 flex flex-col items-start gap-1 normal-case font-normal transition-all text-left">
+                    <button type="button" data-reading-mode-option="page" aria-pressed="false" class="btn btn-sm h-auto py-3 flex flex-col items-start gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all text-left">
                         <span class="font-semibold">Dedicated page</span>
-                        <span class="reading-mode-option-hint text-xs text-base-content/60">Open articles on a clean reader page</span>
+                        <span class="text-xs text-base-content/60">Open articles on a clean reader page</span>
                     </button>
-                    <button type="button" data-reading-mode-option="inline" aria-pressed="false" class="btn btn-sm btn-outline h-auto py-3 flex flex-col items-start gap-1 normal-case font-normal transition-all text-left">
+                    <button type="button" data-reading-mode-option="inline" aria-pressed="false" class="btn btn-sm h-auto py-3 flex flex-col items-start gap-1 normal-case font-normal border border-base-content/10 hover:border-primary transition-all text-left">
                         <span class="font-semibold">In feed</span>
-                        <span class="reading-mode-option-hint text-xs text-base-content/60">Expand articles inside the dashboard list</span>
+                        <span class="text-xs text-base-content/60">Expand articles inside the dashboard list</span>
                     </button>
                 </div>
-                <script>
-                    (function () {
-                        function syncReadingModeControls() {
-                            var mode = localStorage.getItem('reading-mode') === 'inline' ? 'inline' : 'page';
-                            document.querySelectorAll('[data-reading-mode-option]').forEach(function (btn) {
-                                var active = btn.getAttribute('data-reading-mode-option') === mode;
-                                btn.classList.toggle('reading-mode-option-active', active);
-                                btn.classList.toggle('btn-primary', active);
-                                btn.classList.toggle('btn-outline', !active);
-                                btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-                            });
-                        }
-
-                        syncReadingModeControls();
-                        document.querySelectorAll('[data-reading-mode-option]').forEach(function (btn) {
-                            btn.addEventListener('click', function () {
-                                window.setTimeout(syncReadingModeControls, 0);
-                            });
-                        });
-                    })();
-                </script>
             </div>
         </div>
 
@@ -290,6 +269,38 @@
                         </span>
                     </button>
                 </div>
+                <script>
+                    (function () {
+                        function syncReadingModeControls() {
+                            var mode = localStorage.getItem('reading-mode') === 'inline' ? 'inline' : 'page';
+                            document.querySelectorAll('[data-reading-mode-option]').forEach(function (btn) {
+                                var active = btn.getAttribute('data-reading-mode-option') === mode;
+                                btn.classList.toggle('settings-option-selected', active);
+                                btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+                            });
+                        }
+
+                        function syncThemeSwatches() {
+                            var theme = localStorage.getItem('theme') || 'night';
+                            document.querySelectorAll('[data-theme-swatch]').forEach(function (btn) {
+                                var active = btn.getAttribute('data-theme-swatch') === theme;
+                                btn.classList.toggle('settings-option-selected', active);
+                            });
+                        }
+
+                        function syncSettingsSelections() {
+                            syncReadingModeControls();
+                            syncThemeSwatches();
+                        }
+
+                        syncSettingsSelections();
+                        document.querySelectorAll('[data-reading-mode-option], [data-theme-swatch]').forEach(function (btn) {
+                            btn.addEventListener('click', function () {
+                                window.setTimeout(syncSettingsSelections, 0);
+                            });
+                        });
+                    })();
+                </script>
             </div>
         </div>
 

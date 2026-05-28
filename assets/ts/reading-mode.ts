@@ -20,15 +20,13 @@ function applyReadingMode(mode) {
     }
   }
 }
-const READING_MODE_ACTIVE_CLASS = "reading-mode-option-active";
+const SETTINGS_OPTION_SELECTED_CLASS = "settings-option-selected";
 
 function updateReadingModeControls(mode) {
   document.querySelectorAll("[data-reading-mode-option]").forEach((el) => {
     const option = el.dataset.readingModeOption;
     const isActive = option === mode;
-    el.classList.toggle(READING_MODE_ACTIVE_CLASS, isActive);
-    el.classList.toggle("btn-primary", isActive);
-    el.classList.toggle("btn-outline", !isActive);
+    el.classList.toggle(SETTINGS_OPTION_SELECTED_CLASS, isActive);
     el.setAttribute("aria-pressed", isActive ? "true" : "false");
   });
 }
