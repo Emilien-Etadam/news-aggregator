@@ -34,6 +34,10 @@ body {
 /* Settings: reading mode option buttons */
 [data-reading-mode-option].reading-mode-option-active {
     border-color: oklch(var(--p)) !important;
-    background-color: color-mix(in oklch, oklch(var(--p)) 14%, oklch(var(--b1)));
-    box-shadow: inset 0 0 0 1px oklch(var(--p));
+    color: oklch(var(--pc)) !important;
+    background-color: oklch(var(--p)) !important;
+}
+
+[data-reading-mode-option].reading-mode-option-active .reading-mode-option-hint {
+    color: oklch(var(--pc) / 0.75) !important;
 }

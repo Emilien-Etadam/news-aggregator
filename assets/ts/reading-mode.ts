@@ -27,6 +27,8 @@ function updateReadingModeControls(mode) {
     const option = el.dataset.readingModeOption;
     const isActive = option === mode;
     el.classList.toggle(READING_MODE_ACTIVE_CLASS, isActive);
+    el.classList.toggle("btn-primary", isActive);
+    el.classList.toggle("btn-outline", !isActive);
     el.setAttribute("aria-pressed", isActive ? "true" : "false");
   });
 }
